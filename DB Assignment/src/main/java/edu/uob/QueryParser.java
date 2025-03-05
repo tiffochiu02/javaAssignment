@@ -71,11 +71,14 @@ public class QueryParser {
         if (server.getCurrentDatabase() == null) return "[ERROR] no database selected";
         int indexOfSelect = tokens.indexOf("SELECT");
         int indexOfFrom = tokens.indexOf("FROM");
-        int indexOfWhere = tokens.indexOf("WHERE");
-        String selectItem = tokens.get(indexOfSelect + 1);
+        // int indexOfWhere = tokens.indexOf("WHERE");
+        // String selectItem = tokens.get(indexOfSelect + 1);
         String tableName = tokens.get(indexOfFrom + 1);
-        //error detection: if table name doesn't exist
         Table selectedTable = server.getCurrentDatabase().getTables(tableName);
+        //error detection: if table name doesn't exist
+        if (selectedTable == null) {
+            return "[ERROR] Table " + tableName + " not found";
+        }
         StringBuilder rowString = new StringBuilder();
 
         ArrayList<String> selectedColumns = new ArrayList<>();
@@ -90,7 +93,7 @@ public class QueryParser {
         if (selectedColumns.size() == 1 && selectedColumns.get(0).equals("*")) {
             rowString.append(selectedTable.columnNamesAsString()).append("\n"); //headers for *
             for (int iRow = 0; iRow < selectedTable.getRows().size(); iRow++) {
-             //   if (cond.check(row))
+//                if (cond.check(row))
                 rowString.append(selectedTable.getRows().get(iRow).toString()).append("\n");
             }
         } else {
@@ -99,32 +102,12 @@ public class QueryParser {
             }
             rowString.append("\n");
             for (int iRow = 0; iRow < selectedTable.getRows().size(); iRow++) {
-                //  if (cond.check(row))
+//                if (cond.check(row))
                 rowString.append(selectedTable.getRows().get(iRow).toString(selectedColumns)).append("\n");
             }
         }
         return "[OK]" + "\n" + rowString;
     }
-
-//        if (selectItem.equals("*")) {
-//            rowString.append(selectedTable.columnNamesAsString()).append("\t");
-//        } else {
-//            for (int j = indexOfSelect + 1; tokens.get(j+1).equals(",") || tokens.get(j+1).equalsIgnoreCase("from") ; j+=2) {
-//                rowString.append(tokens.get(j)).append("\n");
-//            }
-//        }
-//        for(int iRow = 0; iRow < selectedTable.getRows().size(); iRow++){
-//            if(selectItem.equals("*")){
-//                rowString.append(selectedTable.getRows().get(iRow).toString());
-//            } else {
-//                for (int j = indexOfSelect + 1; tokens.get(j+1).equals(",") || tokens.get(j+1).equalsIgnoreCase("FROM");j+=2){
-//                    rowString.append(selectedTable.getRows().get(iRow).getValue(tokens.get(j))).append("\t");
-//                }
-//            }
-//            rowString.append("\n");
-//        }
-//        return "[OK]" + "\n" + rowString.toString();
-//    }
 
 // INSERT INTO marks VALUES ('Chris', 20, FALSE);
     private String insertIntoTable(ArrayList<String> tokens, DBServer server) {

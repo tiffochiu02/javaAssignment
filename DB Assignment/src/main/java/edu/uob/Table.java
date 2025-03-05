@@ -4,12 +4,11 @@ import java.io.*;
 import java.util.*;
 
 public class Table{
-    final private static String ID_COL = "id";
+    final public static String ID_COL = "id";
     final private static String suffix = ".tab";
     private String tableName;
     private ArrayList<Row> rows;
     private ArrayList<Column> columns;
-    private long rowIdentifier;
     private String tablePath;
     //private ArrayList<String> types;
     //private int numOfColumns;
@@ -19,7 +18,6 @@ public class Table{
         this.tableName = tableName;
         this.rows = new ArrayList<>();
         this.columns = new ArrayList<>();
-        this.rowIdentifier = 1;
         this.tablePath = basePath + File.separator + tableName + suffix;
     }
 
@@ -93,8 +91,7 @@ public class Table{
             BufferedReader buffReader = new BufferedReader(fileReader);
             String line = buffReader.readLine(); //take the first line of the file which is the headers
             String[] tokens = line.split("\\s+");
-            //parse the first line and set the corresponding column attributes such as name and add the columns into the table
-            for(int i = 0; i < tokens.length; i++){
+            for(int i = 1; i < tokens.length; i++){
                 addColumn(tokens[i],"");
             }
             while (line != null) {

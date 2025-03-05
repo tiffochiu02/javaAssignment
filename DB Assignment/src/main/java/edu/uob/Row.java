@@ -38,7 +38,7 @@ public class Row {
 
     public String toString(){
         StringBuilder result = new StringBuilder();
-        result.append(primaryKey + "\t");
+        result.append(primaryKey).append("\t");
         rowValues.forEach((k,v)->{
             System.out.println(k + v);
             result.append(v).append("\t");
@@ -47,9 +47,9 @@ public class Row {
     }
     public String toString(ArrayList<String> columns){
         StringBuilder result = new StringBuilder();
-        result.append(primaryKey + "\t");
+        result.append(primaryKey).append("\t");
         for (String col : columns) {
-            result.append(rowValues.get(col) + "\t");
+            result.append(rowValues.get(col)).append("\t");
         }
         return result.toString();
     }

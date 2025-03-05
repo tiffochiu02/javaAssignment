@@ -108,7 +108,6 @@ public class QueryParser {
         }
         return "[OK]" + "\n" + rowString;
     }
-
 // INSERT INTO marks VALUES ('Chris', 20, FALSE);
     private String insertIntoTable(ArrayList<String> tokens, DBServer server) {
         if (server.getCurrentDatabase() == null) return "[ERROR] no database selected";

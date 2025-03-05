@@ -59,13 +59,17 @@ public class Row {
         Row newRow = new Row();
         String[] tokens = rowString.split("\\s+");
         newRow.rowValues = new LinkedHashMap<>();
+        if (tokens.length == 0) {return null;}
         int offset = 0;
         if(checkId){
-            offset = 1;
+
             if(!tokens[0].matches("\\d+")) {return null;}    //checking whether the first item is a number / primary key
             newRow.setPrimaryKey(Long.parseLong(tokens[0]));
+            offset = 1;
         }
-        for (int i = 0; i < tokens.length && i < columnNames.size(); i++) {
+        int numColumns = Math.min(tokens.length - offset, columnNames.size());
+
+        for (int i = 0; i < numColumns && i < columnNames.size(); i++) {
             newRow.rowValues.put(columnNames.get(i), tokens[i + offset].trim());
         }
         return newRow;

@@ -56,7 +56,7 @@ public class QueryParser {
     public String createTable(ArrayList<String> tokens, DBServer server) {
         String tableName = tokens.get(2).toLowerCase();
         Table newTable = new Table(tableName, server.getCurrentDatabase().getPath());
-        
+
         for(int i = 4; i<tokens.size(); i+=2) {
             if(tokens.get(i).equals(";")){break;}
             newTable.addColumn(tokens.get(i), "");
@@ -85,22 +85,22 @@ public class QueryParser {
                 selectedColumns.add(token);
             }
         }
+        //        Conditions cond PARSE
+        rowString.append(Table.ID_COL + "\t");
         if (selectedColumns.size() == 1 && selectedColumns.get(0).equals("*")) {
             rowString.append(selectedTable.columnNamesAsString()).append("\n"); //headers for *
             for (int iRow = 0; iRow < selectedTable.getRows().size(); iRow++) {
+             //   if (cond.check(row))
                 rowString.append(selectedTable.getRows().get(iRow).toString()).append("\n");
             }
-            //rowString.append("\n");
         } else {
             for (String selectedColumn : selectedColumns) {
                 rowString.append(selectedColumn).append("\t");
             }
             rowString.append("\n");
             for (int iRow = 0; iRow < selectedTable.getRows().size(); iRow++) {
-                for (String col : selectedColumns) {
-                    rowString.append(selectedTable.getRows().get(iRow).getValue(col)).append("\t");
-                }
-                rowString.append("\n");
+                //  if (cond.check(row))
+                rowString.append(selectedTable.getRows().get(iRow).toString(selectedColumns)).append("\n");
             }
         }
         return "[OK]" + "\n" + rowString;

@@ -35,6 +35,9 @@ public class Row {
 //    public void setRowValues(String columnName, Map<String, String> rowValue) {
 //        this.rowValues = rowValues;
 //    }
+    public void removeValue(String columnName) {
+        this.rowValues.remove(columnName.toLowerCase());
+    }
 
     public String toString(){
         StringBuilder result = new StringBuilder();

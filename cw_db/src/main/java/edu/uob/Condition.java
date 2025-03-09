@@ -73,11 +73,11 @@ public class Condition{
 
 
    }
-    public boolean checkCondition(Map<String, String> row){
-       if(!subConditions.isEmpty()){
-           
-       }
-    }
+//    public boolean checkCondition(Map<String, String> row){
+//       if(!subConditions.isEmpty()){
+//
+//       }
+//    }
 
 
 }

@@ -67,6 +67,7 @@ public class Table{
             if(col.getColumnName().equals(columnName)){
                 System.out.println("enter col for loop if statement " + columnName);
                 columns.remove(col);
+                break;
             }
         }
         for (Row row : rows) {

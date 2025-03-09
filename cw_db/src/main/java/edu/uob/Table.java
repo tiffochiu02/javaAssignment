@@ -63,13 +63,17 @@ public class Table{
         columns.add(newCol);
     }
     public void removeColumn(String columnName){
-        Iterator<Column> iterator = columns.iterator();
-        if(iterator.hasNext()){
-            Column col = iterator.next();
+        for(Column col : columns){
             if(col.getColumnName().equals(columnName)){
-                iterator.remove();
+                System.out.println("enter col for loop if statement " + columnName);
+                columns.remove(col);
             }
         }
+        for (Row row : rows) {
+            System.out.println("enter row for loop in remove column method");
+            row.removeValue(columnName);
+        }
+        //columns.setColumnNames(getColumnNames());
         for(int i = 0; i < columns.size(); i++){
             columns.get(i).setColumnIndex(i);
         }

@@ -31,109 +31,110 @@ public class NodeCheck {
         return flag;
     }
 
-    static String[] comparators = {"==", ">", "<", ">=", "<=", "!=", "LIKE"};
+
     public static boolean isComparator(String token) {
-        boolean flag = false;
+        String[] comparators = {"==", ">", "<", ">=", "<=", "!=", "LIKE"};
         for(String comparator : comparators) {
-            flag = token.equals(comparator);
+            if(token.equals(comparator)){
+                return true;
+            }
         }
-        return flag;
+        return false;
     }
 
     static String[] operators = {"AND", "OR"};
     public static boolean isBoolOperator(String token) {
-        boolean flag = false;
         for (String operator : operators) {
-            flag = token.equals(operator);
+            if(token.equals(operator)){
+                return true;
+            }
         }
-        return flag;
+        return false;
     }
 
     static char[] symbols = {'!', '#', '$', '%', '&', '(', ')', '*', '+', ',', '-',
             '.', '/', ':', ';', '>', '=', '<', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '}', '~'};
 
     public static boolean isSymbol(char character){
-        boolean flag = false;
         for(char symbol: symbols) {
             if(character == symbol){
-                flag = true;
+                return true;
             }
         }
-        return flag;
+        return false;
     }
 
     public static boolean isPlainText(String token) {
-        boolean flag = false;
         for(char c : token.toCharArray()) {
-            if(Character.isLetter(c) || Character.isDigit(c)) {flag = true;}
-            if(isPlainText(token) || Character.isLetterOrDigit(c)) {flag = true;}
+            if(Character.isLetterOrDigit(c)) {return true;}
         }
-        return flag;
+        return false;
     }
 
 
 
     public static boolean isIntegerLiteral(String token){
-        boolean flag = false;
-        if(isdigitSequence(token)){ flag = true; }
+        if(isdigitSequence(token)){ return true; }
 
         if(token.charAt(0) == '-' || token.charAt(1) == '+'){
             String sub = token.substring(1);
-            if(isdigitSequence(sub)){ flag = true; }
+            if(isdigitSequence(sub)){ return true; }
         }
-        return flag;
+        return false;
     }
 
     public static boolean isFloatLiteral(String token){
-        boolean flag = false;
         if(token.contains(".")){
             String firstHalf = token.substring(0, token.indexOf('.'));
             String secondHalf = token.substring(token.indexOf('.') + 1);
-            if(isIntegerLiteral(firstHalf) && isdigitSequence(secondHalf)){ flag = true;}
+            if(isIntegerLiteral(firstHalf) && isdigitSequence(secondHalf)){ return true;}
         }
-        return flag;
+        return false;
     }
 
     public static boolean isBooleanLiteral(String token){
-        boolean flag = false;
-        if(token.equals("TRUE") || token.equals("FALSE")){ flag = true; }
-        return flag;
+        if(token.equals("TRUE") || token.equals("FALSE")){ return true; }
+        return false;
     }
 
     public static boolean isCharLiteral(char c){
-        boolean flag = false;
-
-        if(Character.isLetter(c) || Character.isSpaceChar(c) || isSymbol(c) || Character.isDigit(c)){ flag = true; }
-
-        return flag;
+        if(Character.isLetter(c) || Character.isSpaceChar(c) || isSymbol(c) || Character.isDigit(c)){ return true; }
+        return false;
     }
 
     public static boolean isStringLiteral(String token){
-        boolean flag = false;
         for(char c : token.toCharArray()){
-            if(isCharLiteral(c) || Character.isSpaceChar(c)){ flag = true; }
-            if(isCharLiteral(c) || isStringLiteral(token)){ flag = true; }
+            if(isCharLiteral(c) || Character.isSpaceChar(c)){ return true; }
+            //if(isCharLiteral(c) || isStringLiteral(token)){ return true; }
         }
-        return flag;
+        return false;
     }
     // [Value]::=  "'" [StringLiteral] "'" | [BooleanLiteral] | [FloatLiteral] | [IntegerLiteral] | "NULL"
     public static boolean isValue(String token){
-        boolean flag = false;
         if(token.startsWith("'") && token.endsWith("'")){
             String sub = token.substring(0, token.length()-1);
-            if(isStringLiteral(sub)){ flag = true; }
+            if(isStringLiteral(sub)){ return true; }
         }
-        if(isBooleanLiteral(token)){ flag = true; }
-        if(isFloatLiteral(token)){ flag = true; }
-        if(isIntegerLiteral(token)){ flag = true; }
-        return flag;
+        if(isBooleanLiteral(token)){ return true; }
+        if(isFloatLiteral(token)){ return true; }
+        if(isIntegerLiteral(token)){ return true; }
+        return false;
     }
 
     public static boolean isAttributeName(String token){
-        boolean flag = false;
         if(isPlainText(token)){ return true; }
-        return flag;
+        return false;
     }
+
+    public static boolean isNameValuePair(ArrayList<String> tokens){
+        if(!(tokens.size() == 3)){ return false; }
+        String first = tokens.get(0);
+        String second = tokens.get(1);
+        String third = tokens.get(2);
+        if(isAttributeName(first) && second.equals("=") && isValue(third)){ return true; }
+        return false;
+    }
+    //public static boolean isNameValuePair(String token){}
 
 
 //<Condition>       ::=  "(" <Condition> ")" | <FirstCondition> <BoolOperator> <SecondCondition> | [AttributeName] <Comparator> [Value]

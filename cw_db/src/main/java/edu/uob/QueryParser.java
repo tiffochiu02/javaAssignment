@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.OptionalDataException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Objects;
 
 import static edu.uob.Condition.parseCondition;
 
@@ -37,8 +38,8 @@ public class QueryParser {
                 return alterTable(tokens,server);
             case "DROP":
                 return dropObject(tokens,server);
-//            case "JOIN":
-//                return joinObject(tokens,server);
+            case "JOIN":
+                return joinObject(tokens,server);
             case "UPDATE":
                 return updateObject(tokens,server,conditionTokens);
             case "DELETE":
@@ -91,8 +92,17 @@ public class QueryParser {
  //SELECT id,mark FROM marks WHERE pass == FALSE;
     public String selectTable(ArrayList<String> tokens, DBServer server, ArrayList<String> conditionTokens) {
         if (server.getCurrentDatabase() == null) return "[ERROR] no database selected";
-        int indexOfSelect = tokens.indexOf("SELECT");
-        int indexOfFrom = tokens.indexOf("FROM");
+        int indexOfFrom = 0;
+        int indexOfSelect = 0;
+        for(String token : tokens) {
+            if(token.equalsIgnoreCase("FROM")) {
+                indexOfFrom = tokens.indexOf(token);
+            }
+            if(token.equalsIgnoreCase("SELECT")) {
+                indexOfSelect = tokens.indexOf(token);
+            }
+        }
+        //int indexOfFrom = tokens.indexOf("FROM".toUpperCase());
         boolean hasConditions = !conditionTokens.isEmpty();
         String tableName = tokens.get(indexOfFrom + 1);
         Table selectedTable = server.getCurrentDatabase().getTables(tableName);
@@ -118,10 +128,10 @@ public class QueryParser {
 //                if (cond.check(row))
                 if(hasConditions){
                     if(executeCondition(conditionTokens, selectedTable.getRows().get(iRow))){
-                        rowString.append(selectedTable.getRows().get(iRow).toString()).append("\n");
+                        rowString.append(selectedTable.getRows().get(iRow).toString(true)).append("\n");
                     }
                 } else {
-                    rowString.append(selectedTable.getRows().get(iRow).toString()).append("\n");
+                    rowString.append(selectedTable.getRows().get(iRow).toString(true)).append("\n");
                 }
             }
         } else {
@@ -151,6 +161,9 @@ public class QueryParser {
     }
 // INSERT INTO marks VALUES ('Chris', 20, FALSE);
     private String insertIntoTable(ArrayList<String> tokens, DBServer server) {
+        if(!tokens.get(1).equalsIgnoreCase("INTO") || !tokens.get(3).equalsIgnoreCase("VALUES")) {
+            return "[ERROR} invalid command";
+        }
         if (server.getCurrentDatabase() == null) return "[ERROR] no database selected";
         String tableName = tokens.get(2).toLowerCase();
         Table table = server.getCurrentDatabase().getTables(tableName);
@@ -216,7 +229,7 @@ public class QueryParser {
     public String alterTable(ArrayList<String> tokens, DBServer server) {
         if(server.getCurrentDatabase() == null) return "[ERROR] no database selected";
         if(!tokens.get(1).equalsIgnoreCase("TABLE")){
-            return "[ERROR] Cannot drop" + tokens.get(1).toUpperCase();
+            return "[ERROR] Invalid command" + tokens.get(1).toUpperCase();
         }
         String object = tokens.get(3).toUpperCase();
         switch(object) {
@@ -264,6 +277,7 @@ public class QueryParser {
     }
 //"DELETE " "FROM " [TableName] " WHERE " <Condition>
     public String deleteObject(ArrayList<String> tokens, DBServer server, ArrayList<String> conditionTokens) {
+        if(!tokens.get(1).equalsIgnoreCase("FROM") || !tokens.get(3).equalsIgnoreCase("WHERE")) return "[ERROR] Invalid command";
         String tableName = tokens.get(2).toLowerCase();
         Table table = server.getCurrentDatabase().getTables(tableName);
         for(Row row : table.getRows()) {
@@ -349,19 +363,54 @@ public class QueryParser {
         StringBuilder rowString = new StringBuilder();
 
         rowString.append(Table.ID_COL).append("\t");
-        rowString.append(table1.getColumnNames().toString()).append("\t").append(table2.getColumnNames().toString()).append("\n");
+        for(int i = 0; i < table1.getColumns().size(); i++){
+            if(!Objects.equals(table1.getColumns().get(i).getColumnName(), attributeName1)) {
+                rowString.append(table1.getColumns().get(i).getColumnName()).append("\t");
+            }
+        }
+        for(int i = 0; i < table2.getColumns().size(); i++){
+            if(!Objects.equals(table2.getColumns().get(i).getColumnName(), attributeName2)) {
+                rowString.append(table2.getColumns().get(i).getColumnName()).append("\t");
+            }
+        }
+        rowString.append("\n");
 
         int newId = 0;
         for(int iRow = 0; iRow < table1.getRows().size(); iRow++){
             for(int jRow = 0; jRow < table2.getRows().size(); jRow++){
-                if(table1.getRows().get(iRow).getValue(attributeName1).equals(table2.getRows().get(jRow).getValue(attributeName2))){
+                String rowItem1;
+                String rowItem2;
+                if(attributeName1.equalsIgnoreCase(Table.ID_COL)){
+                    rowItem1 = String.valueOf(table1.getRows().get(iRow).getPrimaryKey());
+                } else{
+                    rowItem1 = String.valueOf(table1.getRows().get(iRow).getValue(attributeName1));
+                }
+                System.out.println("reached here! rowItem1: " + rowItem1);
+                if(attributeName2.equalsIgnoreCase(Table.ID_COL)){
+                    rowItem2 = String.valueOf(table2.getRows().get(jRow).getPrimaryKey());
+                } else{
+                    rowItem2 = String.valueOf(table2.getRows().get(jRow).getValue(attributeName2));
+                }
+                System.out.println("reached here! rowItem2: " + rowItem2);
+                if(rowItem1.equals(rowItem2)){
                     newId++;
                     rowString.append(newId).append("\t");
-                    rowString.append(table1.getRows().get(iRow).toString()).append("\t").append(table2.getRows().get(jRow).toString()).append("\n");
+                    for(String colName: table1.getColumnNames()){
+                        String getValue1 = String.valueOf(table1.getRows().get(iRow).getValue(colName));
+                        if(!getValue1.equalsIgnoreCase(rowItem1)){
+                            rowString.append(getValue1).append("\t");
+                        }
+                    }
+                    for(String colName: table2.getColumnNames()){
+                        String getValue2 = String.valueOf(table2.getRows().get(jRow).getValue(colName));
+                        if(!getValue2.equalsIgnoreCase(rowItem2)){
+                            rowString.append(getValue2).append("\t");
+                        }
+                    }
+                    rowString.append("\n");
                 }
             }
         }
-
-        return "[OK]" + "\n" + rowString.toString();
+        return "[OK]" + "\n" + rowString;
     }
 }

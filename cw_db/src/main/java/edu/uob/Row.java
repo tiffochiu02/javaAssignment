@@ -1,9 +1,6 @@
 package edu.uob;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Row {
     private Map<String,String> rowValues; //the key in the map is column name
@@ -29,30 +26,50 @@ public class Row {
     public String getValue(String columnName) {
         return rowValues.get(columnName);
     }
+    public Map<String,String> getRowValues(){
+        return rowValues;
+    }
     public void setValue(String columnName, String value) {
         rowValues.put(columnName, value);
     }
 //    public void setRowValues(String columnName, Map<String, String> rowValue) {
 //        this.rowValues = rowValues;
 //    }
+
     public void removeValue(String columnName) {
         this.rowValues.remove(columnName.toLowerCase());
     }
 
     public String toString(){
         StringBuilder result = new StringBuilder();
+//        if(requiresId){
+//            result.append(primaryKey).append("\t");
+//        }
         result.append(primaryKey).append("\t");
         rowValues.forEach((k,v)->{
-            System.out.println(k + v);
+            //System.out.println(k + v);
             result.append(v).append("\t");
         });
         return result.toString();
     }
     public String toString(ArrayList<String> columns){
+//        int idLocation = 0;
+//        for(String column:columns){
+//            if(Objects.equals(column, Table.ID_COL)){
+//                idLocation = columns.indexOf(Table.ID_COL);
+//            }
+//        }
         StringBuilder result = new StringBuilder();
-        result.append(primaryKey).append("\t");
+        //result.append(primaryKey).append("\t");
+//        if(requiresId){
+//            result.append(primaryKey).append("\t");
+//        }
         for (String col : columns) {
-            result.append(rowValues.get(col)).append("\t");
+            if(Objects.equals(col,Table.ID_COL)){
+                result.append(primaryKey).append("\t");
+            } else {
+                result.append(rowValues.get(col)).append("\t");
+            }
         }
         return result.toString();
     }
@@ -65,15 +82,13 @@ public class Row {
         if (tokens.length == 0) {return null;}
         int offset = 0;
         if(checkId){
-
             if(!tokens[0].matches("\\d+")) {return null;}    //checking whether the first item is a number / primary key
             newRow.setPrimaryKey(Long.parseLong(tokens[0]));
             offset = 1;
-        }
+       }
         int numColumns = Math.min(tokens.length - offset, columnNames.size());
-
         for (int i = 0; i < numColumns && i < columnNames.size(); i++) {
-            newRow.rowValues.put(columnNames.get(i), tokens[i + offset].trim());
+            newRow.rowValues.put(columnNames.get(i), tokens[i+offset].trim());
         }
         return newRow;
     }

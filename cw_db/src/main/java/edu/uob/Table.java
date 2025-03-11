@@ -31,8 +31,11 @@ public class Table{
         }
         return names;
     }
-//    public void setColumnNames(ArrayList<String> columnNames) {
-//        this.columnNames = columnNames;
+//    public void setColumnNames(ArrayList<String> newColumnNames) {
+//        ArrayList<String> oldColumnNames = this.getColumnNames();
+//        for (int i = 0; i < newColumnNames.size(); i++) {
+//            col.setColumnName();
+//        }
 //    }
     public String columnNamesAsString(){
         String columnsString = "";
@@ -63,6 +66,13 @@ public class Table{
         columns.add(newCol);
     }
     public void removeColumn(String columnName){
+//        Iterator<Column> iterator = columns.iterator();
+//        if(iterator.hasNext()){
+//            Column col = iterator.next();
+//            if(col.getColumnName().equals(columnName)){
+//                iterator.remove();
+//            }
+//        }
         for(Column col : columns){
             if(col.getColumnName().equals(columnName)){
                 System.out.println("enter col for loop if statement " + columnName);
@@ -78,6 +88,7 @@ public class Table{
         for(int i = 0; i < columns.size(); i++){
             columns.get(i).setColumnIndex(i);
         }
+
     }
 
     public void addRow(Row row){
@@ -104,7 +115,11 @@ public class Table{
                 line = buffReader.readLine();
                 if(line == null){break;}
                 Row row = Row.fromString(line,this.getColumnNames(), true); //turn each row into String
-                if(row != null){this.addRow(row);} //add row to the table
+                if(row != null){
+                    this.addRow(row);
+//                    String[] lineTok = line.split("\\s+");
+//                    row.setPrimaryKey(Long.parseLong(lineTok[0]));
+                } //add row to the table
                 else{break;}
             }
             buffReader.close();

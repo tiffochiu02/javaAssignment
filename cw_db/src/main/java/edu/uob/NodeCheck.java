@@ -13,7 +13,7 @@ package edu.uob;
 //        [CharLiteral]     ::=  [Space] | [Letter] | [Symbol] | [Digit]
 //
 //        [StringLiteral]   ::=  "" | [CharLiteral] | [StringLiteral] [CharLiteral]
-//
+
 
 
 import java.util.ArrayList;
@@ -122,7 +122,7 @@ public class NodeCheck {
     }
 
     public static boolean isAttributeName(String token){
-        if(isPlainText(token)){ return true; }
+        if(isPlainText(token) && !isBoolOperator(token) && !token.equalsIgnoreCase("LIKE")){ return true; }
         return false;
     }
 
@@ -134,65 +134,10 @@ public class NodeCheck {
         if(isAttributeName(first) && second.equals("=") && isValue(third)){ return true; }
         return false;
     }
-    //public static boolean isNameValuePair(String token){}
 
-
-//<Condition>       ::=  "(" <Condition> ")" | <FirstCondition> <BoolOperator> <SecondCondition> | [AttributeName] <Comparator> [Value]
-
-//    public static boolean checkCondition(ArrayList<String> tokens){
-//        boolean flag = false;
-//        if(tokens.size() == 3){
-//            String sub1 = tokens.get(0);
-//            String sub2 = tokens.get(1);
-//            String sub3 = tokens.get(2);
-//            if(isAttributeName(sub1) && Comparator.isComparator(sub2) && isValue(sub3)){ flag = true; }
-//        }
-//        for(String token: tokens){
-//            if(BoolOperator.isBoolOperator(token)){
-//                int indexOfOperator = tokens.indexOf(token);
-//                ArrayList<String> part1 = new ArrayList<>(tokens.subList(0, indexOfOperator));
-//                ArrayList<String> part2 = new ArrayList<>(tokens.subList(indexOfOperator + 1, tokens.size()));
-//                if(isFirstCondition(part1) && isSecondCondition(part2)){flag = true; }
-//            }
-//        }
-//        return flag;
-//    }
+//    public static ArrayList<String> conditionTokeniser(ArrayList<String> tokens){
+//        String tokensString = tokens.toString();
 //
-//    //<FirstCondition>  ::=  <Condition> " " | "(" <Condition> ")"
-//    public static boolean isFirstCondition(ArrayList<String> tokens){
-//        boolean flag = false;
-//        if(tokens.get(0).equals("(") && tokens.get(tokens.size()).equals(")")){
-//           ArrayList<String> sub = new ArrayList<>(tokens.subList(1, tokens.size()-1));
-//           if(checkCondition(sub)){flag = true; }
-//        }
-//        if(tokens.get(tokens.size()).equals(" ")){
-//            ArrayList<String> sub = new ArrayList<>(tokens.subList(0, tokens.size()-1));
-//            if(checkCondition(sub)){flag = true; }
-//        }
-//        return flag;
 //    }
-//
-//    //<SecondCondition> ::=  " " <Condition> | "(" <Condition> ")"
-//    public static boolean isSecondCondition(ArrayList<String> tokens){
-//        boolean flag = false;
-//        if(tokens.get(0).equals(" ")){
-//            ArrayList<String> sub = new ArrayList<>(tokens.subList(1, tokens.size()));
-//            if(checkCondition(sub)){flag = true; }
-//        }
-//        if(tokens.get(0).equals("(") && tokens.get(tokens.size()).equals(")")){
-//            ArrayList<String> sub = new ArrayList<>(tokens.subList(1, tokens.size()-1));
-//            if(checkCondition(sub)){flag = true; }
-//        }
-//        return flag;
-//    }
-
-//    //if the current node is a "("
-//    public static boolean newCondition(String token){
-//        boolean flag = false;
-//        if(tokens.get(0).equals("(")){
-//
-//        }
-//    }
-
 
 }

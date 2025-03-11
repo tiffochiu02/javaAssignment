@@ -40,12 +40,12 @@ public class Row {
         this.rowValues.remove(columnName.toLowerCase());
     }
 
-    public String toString(){
+    public String toString(boolean requiresId){
         StringBuilder result = new StringBuilder();
-//        if(requiresId){
-//            result.append(primaryKey).append("\t");
-//        }
-        result.append(primaryKey).append("\t");
+        if(requiresId){
+            result.append(primaryKey).append("\t");
+        }
+        //result.append(primaryKey).append("\t");
         rowValues.forEach((k,v)->{
             //System.out.println(k + v);
             result.append(v).append("\t");
@@ -53,17 +53,7 @@ public class Row {
         return result.toString();
     }
     public String toString(ArrayList<String> columns){
-//        int idLocation = 0;
-//        for(String column:columns){
-//            if(Objects.equals(column, Table.ID_COL)){
-//                idLocation = columns.indexOf(Table.ID_COL);
-//            }
-//        }
         StringBuilder result = new StringBuilder();
-        //result.append(primaryKey).append("\t");
-//        if(requiresId){
-//            result.append(primaryKey).append("\t");
-//        }
         for (String col : columns) {
             if(Objects.equals(col,Table.ID_COL)){
                 result.append(primaryKey).append("\t");
@@ -92,7 +82,6 @@ public class Row {
         }
         return newRow;
     }
-
 
 }
 

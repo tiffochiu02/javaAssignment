@@ -66,13 +66,6 @@ public class Table{
         columns.add(newCol);
     }
     public void removeColumn(String columnName){
-//        Iterator<Column> iterator = columns.iterator();
-//        if(iterator.hasNext()){
-//            Column col = iterator.next();
-//            if(col.getColumnName().equals(columnName)){
-//                iterator.remove();
-//            }
-//        }
         for(Column col : columns){
             if(col.getColumnName().equals(columnName)){
                 System.out.println("enter col for loop if statement " + columnName);
@@ -117,8 +110,6 @@ public class Table{
                 Row row = Row.fromString(line,this.getColumnNames(), true); //turn each row into String
                 if(row != null){
                     this.addRow(row);
-//                    String[] lineTok = line.split("\\s+");
-//                    row.setPrimaryKey(Long.parseLong(lineTok[0]));
                 } //add row to the table
                 else{break;}
             }
@@ -131,6 +122,7 @@ public class Table{
             System.out.println(e.getMessage());
         }
     }
+
     public void saveTable() {
         try{
             FileWriter fileToSave = new FileWriter(this.tablePath);
@@ -152,6 +144,5 @@ public class Table{
             System.out.println(e.getMessage());
         }
     }
-
 
 }

@@ -75,7 +75,7 @@ public class Row {
             if(!tokens[0].matches("\\d+")) {return null;}    //checking whether the first item is a number / primary key
             newRow.setPrimaryKey(Long.parseLong(tokens[0]));
             offset = 1;
-       }
+        }
         int numColumns = Math.min(tokens.length - offset, columnNames.size());
         for (int i = 0; i < numColumns && i < columnNames.size(); i++) {
             newRow.rowValues.put(columnNames.get(i), tokens[i+offset].trim());

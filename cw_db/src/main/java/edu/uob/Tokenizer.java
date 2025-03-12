@@ -6,7 +6,8 @@ import java.util.Arrays;
 public class Tokenizer {
     //String query = "  INSERT  INTO  people   VALUES(  'Simon Lock'  ,35, 'simon@bristol.ac.uk' , 1.8  ) ; ";
     static String[] specialCharacters = {"(",")",",",";"};
-
+    static String[] noSpaceCharacters1 = {"=", ">", "<"};
+    static String[] noSpaceCharacters2 = {"==", ">=", "<=", "!="};
 
     public static ArrayList<String> setup(String query)
     {
@@ -19,7 +20,22 @@ public class Tokenizer {
                 // If it's not a string literal, it must be query text (which needs further processing)
             else {
                 // Tokenise the fragment into an array of strings - this is the "clever" bit !
-                String[] nextBatchOfTokens = tokenise(fragments[i]);
+                System.out.println(fragments[i]);
+                String trimmedFragments = fragments[i];
+                for (int j = 0; j < noSpaceCharacters2.length; j++) {
+                    String s = noSpaceCharacters2[j];
+                    trimmedFragments = trimmedFragments.replaceAll(s, "_" + j + "_");
+                }
+                for (int j = 0; j < noSpaceCharacters1.length; j++) {
+                    String s = noSpaceCharacters1[j];
+                    trimmedFragments = trimmedFragments.replaceAll(s, " " + s + " ");
+                }
+                for (int j = 0; j < noSpaceCharacters2.length; j++) {
+                    String s = noSpaceCharacters2[j];
+                    trimmedFragments = trimmedFragments.replaceAll("_" + j + "_", " " + s + " ");
+                }
+                System.out.println(trimmedFragments);
+                String[] nextBatchOfTokens = tokenise(trimmedFragments);
                 // Then copy all the tokens into the "result" list (needs a bit of conversion)
                 tokens.addAll(Arrays.asList(nextBatchOfTokens));
             }

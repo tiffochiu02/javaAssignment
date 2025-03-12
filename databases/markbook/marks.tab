@@ -1,5 +1,4 @@
-id	name	mark	pass	
-1	Chris	20	
-2	Bob	60	
-3	Lucy	75	
-4	Elliot	19	
+id	name	mark	pass	age	
+1	Bob	60	TRUE	
+2	Lucy	75	TRUE	
+3	Elliot	19	TRUE	

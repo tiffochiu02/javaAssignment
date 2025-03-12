@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 
 /** This class implements the DB server. */
 public class DBServer {
@@ -17,7 +18,7 @@ public class DBServer {
 
     public static void main(String args[]) throws IOException {
         DBServer server = new DBServer();
-        server.blockingListenOn(8888);
+        server.blockingListenOn(8889);
     }
 
     /**
@@ -47,7 +48,13 @@ public class DBServer {
         //command = command.trim();
         if(tokens.isEmpty()) return "[ERROR] Empty command";
         QueryParser parser = new QueryParser();
-        return parser.executeQuery(tokens,this);
+        try {
+            return parser.executeQuery(tokens, this);
+        } catch (IOException e) {
+            return "[ERROR] Invalid query syntax";
+        } catch (NoSuchElementException e) {
+            return "[ERROR] Element not found";
+        }
         //return "";
     }
 

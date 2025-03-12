@@ -119,6 +119,7 @@ public class CustomTranscriptTest {
         @DisplayName("Test JOIN courses and enrollments")
         public void testJoin() {
             String response = sendCommand("JOIN courses AND enrollments ON courseId AND courseId;");
+            System.out.println(response);
             assertTrue(response.contains("[OK]"), "JOIN command failed.");
             assertTrue(response.contains("courses.courseName"), "Expected header 'courses.courseName' in join output.");
             assertTrue(response.contains("enrollments.studentName"), "Expected header 'enrollments.studentName' in join output.");

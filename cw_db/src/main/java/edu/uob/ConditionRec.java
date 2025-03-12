@@ -43,71 +43,71 @@ public class ConditionRec {
 
    // SELECT * FROM XXX WHERE <.....>
 //    condition.check
-   public static ConditionRec parseCondition(ArrayList<String> tokens) {
-       ArrayList<String> tokens_ = new ArrayList<>(tokens);
-       if (tokens.get(0).equals("(") && tokens.get(tokens.size() - 1).equals(")")) {
-           Stack<String> parStack = new Stack<>();
-           parStack.push("(");
-           boolean isMatched = true;
-           for (String token : tokens.subList(1, tokens.size() - 1)) {
-                if (token.equals("(")) {
-                    parStack.push("(");
-                } else if (token.equals(")")) {
-                    parStack.pop();
-                    if (parStack.isEmpty()) {
-                        isMatched = false;
-                        break;
-                    }
-               }
-           }
-           if (isMatched) {
-                tokens_ = (ArrayList<String>) tokens_.subList(1, tokens_.size() - 1);
-           }
-       }
-       Boolean isSimple = true;
-       for (String token: tokens_) {
-           if (token.equals("AND") || token.equals("OR")) {
-               isSimple = false;
-               break;
-           }
-       }
-       if (isSimple) {
-           return new ConditionRec(tokens_.get(0), tokens_.get(1), tokens_.get(2));
-       }
-       // helper
-       ArrayList<String> subOperators = new ArrayList<>();
-       ArrayList<ConditionRec> subConditions = new ArrayList<>();
-       // Cond_1 BoolOperator Cond_2 BoolOperator Cond_3
-       int i = 0;
-       while (i < tokens_.size()) {
-           if (tokens_.get(i).equals("(")) {
-               Stack<String> parStack = new Stack<>();
-               parStack.push("(");
-               int j = i + 1;
-               while (j < tokens_.size()) {
-                   if (tokens_.get(j).equals("(")) {
-                       parStack.push("(");
-                   } else if (tokens_.get(j).equals(")")) {
-                       if (parStack.size() == 1) {
-                           j = j + 1;
-                           break;
-                       } else {
-                           parStack.pop();
-                       }
-                   }
-               }
-               subConditions.add(parseCondition((ArrayList<String>) tokens_.subList(i+1, j-1)));
-               i = j;
-           } else if (tokens_.get(i).equals("AND") || tokens_.get(i).equals("OR")) {
-                subOperators.add(tokens_.get(i));
-                i++;
-           } else {
-               subConditions.add(new ConditionRec(tokens_.get(i), tokens_.get(i+1), tokens_.get(i+2)));
-               i += 3;
-           }
-       }
-       // (      Cond1      ) AND ( Cond2 )
-   }
+//   public static ConditionRec parseCondition(ArrayList<String> tokens) {
+//       ArrayList<String> tokens_ = new ArrayList<>(tokens);
+//       if (tokens.get(0).equals("(") && tokens.get(tokens.size() - 1).equals(")")) {
+//           Stack<String> parStack = new Stack<>();
+//           parStack.push("(");
+//           boolean isMatched = true;
+//           for (String token : tokens.subList(1, tokens.size() - 1)) {
+//                if (token.equals("(")) {
+//                    parStack.push("(");
+//                } else if (token.equals(")")) {
+//                    parStack.pop();
+//                    if (parStack.isEmpty()) {
+//                        isMatched = false;
+//                        break;
+//                    }
+//               }
+//           }
+//           if (isMatched) {
+//                tokens_ = (ArrayList<String>) tokens_.subList(1, tokens_.size() - 1);
+//           }
+//       }
+//       Boolean isSimple = true;
+//       for (String token: tokens_) {
+//           if (token.equals("AND") || token.equals("OR")) {
+//               isSimple = false;
+//               break;
+//           }
+//       }
+//       if (isSimple) {
+//           return new ConditionRec(tokens_.get(0), tokens_.get(1), tokens_.get(2));
+//       }
+//       // helper
+//       ArrayList<String> subOperators = new ArrayList<>();
+//       ArrayList<ConditionRec> subConditions = new ArrayList<>();
+//       // Cond_1 BoolOperator Cond_2 BoolOperator Cond_3
+//       int i = 0;
+//       while (i < tokens_.size()) {
+//           if (tokens_.get(i).equals("(")) {
+//               Stack<String> parStack = new Stack<>();
+//               parStack.push("(");
+//               int j = i + 1;
+//               while (j < tokens_.size()) {
+//                   if (tokens_.get(j).equals("(")) {
+//                       parStack.push("(");
+//                   } else if (tokens_.get(j).equals(")")) {
+//                       if (parStack.size() == 1) {
+//                           j = j + 1;
+//                           break;
+//                       } else {
+//                           parStack.pop();
+//                       }
+//                   }
+//               }
+//               subConditions.add(parseCondition((ArrayList<String>) tokens_.subList(i+1, j-1)));
+//               i = j;
+//           } else if (tokens_.get(i).equals("AND") || tokens_.get(i).equals("OR")) {
+//                subOperators.add(tokens_.get(i));
+//                i++;
+//           } else {
+//               subConditions.add(new ConditionRec(tokens_.get(i), tokens_.get(i+1), tokens_.get(i+2)));
+//               i += 3;
+//           }
+//       }
+//       // (      Cond1      ) AND ( Cond2 )
+//   }
 
    public boolean checkRow(Row row) {
        if (this.attributeName != null) {

@@ -76,7 +76,7 @@ public class NodeCheck {
     public static boolean isIntegerLiteral(String token){
         if(isdigitSequence(token)){ return true; }
 
-        if(token.charAt(0) == '-' || token.charAt(1) == '+'){
+        if(token.charAt(0) == '-' || token.charAt(0) == '+'){
             String sub = token.substring(1);
             if(isdigitSequence(sub)){ return true; }
         }
@@ -93,7 +93,7 @@ public class NodeCheck {
     }
 
     public static boolean isBooleanLiteral(String token){
-        if(token.equals("TRUE") || token.equals("FALSE")){ return true; }
+        if(token.equalsIgnoreCase("TRUE") || token.equalsIgnoreCase("FALSE")){ return true; }
         return false;
     }
 

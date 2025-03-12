@@ -1,10 +1,14 @@
 package edu.uob;
 
-import java.io.File;
-import java.io.OptionalDataException;
+import java.io.*;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static edu.uob.Condition.parseCondition;
 
@@ -90,7 +94,7 @@ public class QueryParser {
     }
     //SELECT * FROM marks;
  //SELECT id,mark FROM marks WHERE pass == FALSE;
-    public String selectTable(ArrayList<String> tokens, DBServer server, ArrayList<String> conditionTokens) {
+    public String selectTable (ArrayList<String> tokens, DBServer server, ArrayList<String> conditionTokens) {
         if (server.getCurrentDatabase() == null) return "[ERROR] no database selected";
         int indexOfFrom = 0;
         int indexOfSelect = 0;
@@ -119,6 +123,8 @@ public class QueryParser {
                 selectedColumns.add(token);
             }
         }
+        System.out.println("reached here hihihihihi! " + selectedColumns);
+
         //        Conditions cond PARSE
         //rowString.append(Table.ID_COL + "\t");
         if (selectedColumns.size() == 1 && selectedColumns.get(0).equals("*")) {
@@ -135,11 +141,20 @@ public class QueryParser {
                 }
             }
         } else {
-//            boolean requiresID = false;
+            boolean allSelectedColExist = false;
+            String notExistingColumn = "";
+            for(String column : selectedColumns) { //from command
+                for(String retrievedColName : selectedTable.getColumnNames()) {
+                    if(retrievedColName.equalsIgnoreCase(column) || column.equalsIgnoreCase(Table.ID_COL)) {
+                        allSelectedColExist = true;
+                        notExistingColumn = column;
+                        break;
+                    }
+                }
+            }
+            System.out.println("selected table's column names: " + selectedTable.getColumnNames());
+            if(!allSelectedColExist) {return "[ERROR] Column " + notExistingColumn + " not found";}
             for (String selectedColumn : selectedColumns) {
-//                if(selectedColumn.equalsIgnoreCase("id")){
-//                    requiresID = true;
-//                }
                 rowString.append(selectedColumn).append("\t");
             }
             rowString.append("\n");
@@ -147,7 +162,7 @@ public class QueryParser {
 //                if (cond.check(row))
                 if(hasConditions){
                     if(executeCondition(conditionTokens, selectedTable.getRows().get(iRow))) {
-                        //System.out.println("rows that meet the conditions: " + selectedTable.getRows().get(iRow).toString() + "\n");
+                        System.out.println("rows that meet the conditions: " + selectedTable.getRows().get(iRow).toString(true) + "\n");
                         rowString.append(selectedTable.getRows().get(iRow).toString(selectedColumns)).append("\n");
                         //System.out.println("selected columns: " + selectedColumns + "row " + selectedTable.getRows().get(iRow).toString(selectedColumns));
                     }
@@ -217,12 +232,15 @@ public class QueryParser {
         if (server.getCurrentDatabase() == null) return "[ERROR] no database selected";
         String databaseName = tokens.get(2).toLowerCase();
         File deleteDatabaseFile = new File(server.getStorageFolderPath() + File.separator + databaseName);
-        if (!deleteDatabaseFile.exists()) { return "[ERROR] Database " + databaseName + " not found"; }
-        if (deleteDatabaseFile.delete()) {
-            return "[OK] Database " + databaseName + " deleted";
-        } else {
-            return "[ERROR] Database " + databaseName + " could not be deleted";
+        Path deleteDatabasePath = deleteDatabaseFile.toPath();
+        for (File file: (Objects.requireNonNull(deleteDatabasePath.toFile().listFiles()))) {
+            file.delete();
         }
+        deleteDatabaseFile.delete();
+        if (deleteDatabaseFile.exists()) {
+            return "[ERROR] Database " + databaseName + " not found";
+        }
+        return "[OK] Database " + databaseName + " deleted";
     }
    // "ALTER " "TABLE " [TableName] " " <AlterationType> " " [AttributeName]
     //<AlterationType>  ::=  "ADD" | "DROP"
@@ -245,7 +263,7 @@ public class QueryParser {
 
     public String alterTypeAdd(ArrayList<String> tokens, DBServer server) {
         String tableName = tokens.get(2).toLowerCase();
-        String columnName = tokens.get(4).toLowerCase();
+        String columnName = tokens.get(4);
         Table table = server.getCurrentDatabase().getTables(tableName);
         table.addColumn(columnName,"");
         table.saveTable();
@@ -254,7 +272,7 @@ public class QueryParser {
     }
     public String alterTypeDrop(ArrayList<String> tokens, DBServer server) {
         String tableName = tokens.get(2).toLowerCase();
-        String columnName = tokens.get(4).toLowerCase();
+        String columnName = tokens.get(4);
         Table table = server.getCurrentDatabase().getTables(tableName);
         if(!table.getColumnNames().contains(columnName)){
             return "[ERROR] Column " + columnName + " not found";
@@ -265,7 +283,6 @@ public class QueryParser {
         return "[OK] " + columnName + " removed";
     }
 
-//    public String deleteDatabase(String query, DBServer server) {}
 
     public String useDatabase(ArrayList<String> tokens, DBServer server) {
         if(tokens.size() < 2) return "[ERROR] Invalid database"; //check whether there is a table name in the query
@@ -280,10 +297,17 @@ public class QueryParser {
         if(!tokens.get(1).equalsIgnoreCase("FROM") || !tokens.get(3).equalsIgnoreCase("WHERE")) return "[ERROR] Invalid command";
         String tableName = tokens.get(2).toLowerCase();
         Table table = server.getCurrentDatabase().getTables(tableName);
-        for(Row row : table.getRows()) {
-            if(executeCondition(conditionTokens, row)) {
-                table.removeRow(row);
+        Iterator<Row> iterator = table.getRows().iterator();
+        while (iterator.hasNext()) {
+            Row row = iterator.next();
+            if (executeCondition(conditionTokens, row)) {
+                iterator.remove(); // safe removal
             }
+        }
+        int id = 1;
+        for(Row row : table.getRows()){
+            row.setPrimaryKey(id);
+            id++;
         }
         table.saveTable();
         return "[OK] deleted from Table " + tableName;
@@ -358,19 +382,19 @@ public class QueryParser {
         String table2Name = tokens.get(3).toLowerCase();
         Table table1 = server.getCurrentDatabase().getTables(table1Name);
         Table table2 = server.getCurrentDatabase().getTables(table2Name);
-        String attributeName1 = tokens.get(5).toLowerCase();
-        String attributeName2 = tokens.get(7).toLowerCase();
+        String attributeName1 = tokens.get(5);
+        String attributeName2 = tokens.get(7);
         StringBuilder rowString = new StringBuilder();
 
         rowString.append(Table.ID_COL).append("\t");
         for(int i = 0; i < table1.getColumns().size(); i++){
-            if(!Objects.equals(table1.getColumns().get(i).getColumnName(), attributeName1)) {
-                rowString.append(table1.getColumns().get(i).getColumnName()).append("\t");
+            if(table1.getColumns().get(i).getColumnName().equalsIgnoreCase(attributeName1)) {
+                rowString.append(table1Name).append(".").append(table1.getColumns().get(i).getColumnName()).append("\t");
             }
         }
         for(int i = 0; i < table2.getColumns().size(); i++){
-            if(!Objects.equals(table2.getColumns().get(i).getColumnName(), attributeName2)) {
-                rowString.append(table2.getColumns().get(i).getColumnName()).append("\t");
+            if(table2.getColumns().get(i).getColumnName().equalsIgnoreCase(attributeName2)) {
+                rowString.append(table2Name).append(".").append(table2.getColumns().get(i).getColumnName()).append("\t");
             }
         }
         rowString.append("\n");
@@ -383,7 +407,7 @@ public class QueryParser {
                 if(attributeName1.equalsIgnoreCase(Table.ID_COL)){
                     rowItem1 = String.valueOf(table1.getRows().get(iRow).getPrimaryKey());
                 } else{
-                    rowItem1 = String.valueOf(table1.getRows().get(iRow).getValue(attributeName1));
+                    rowItem1 = String.valueOf(table1.getRows().get(iRow).getValue(attributeName1)); //here!
                 }
                 System.out.println("reached here! rowItem1: " + rowItem1);
                 if(attributeName2.equalsIgnoreCase(Table.ID_COL)){

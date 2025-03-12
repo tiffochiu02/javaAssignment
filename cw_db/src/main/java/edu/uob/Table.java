@@ -81,15 +81,24 @@ public class Table{
         for(int i = 0; i < columns.size(); i++){
             columns.get(i).setColumnIndex(i);
         }
-
     }
 
     public void addRow(Row row){
         row.setPrimaryKey(generateRowIdentifier()); //set the row's primary key when creating a new row
         rows.add(row);
     }
+
     public void removeRow(Row row){
+//        Iterator<Row> iterator = rows.iterator();
+//        while(iterator.hasNext()){
+//            if(iterator.next().equals(row)){
+//                iterator.remove();
+//            }
+//        }
         rows.remove(row);
+//        for(Row currentRow: rows){
+//            currentRow.setPrimaryKey(generateRowIdentifier());
+//        }
     }
 
     public void loadTable(){
@@ -133,7 +142,7 @@ public class Table{
             }
             bufferedWriter.newLine();
             for(Row row : rows){
-                bufferedWriter.write(row.toString() + "\n");
+                bufferedWriter.write(row.toString(true) + "\n");
             }
             bufferedWriter.close();
         }

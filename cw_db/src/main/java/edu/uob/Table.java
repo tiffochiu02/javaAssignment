@@ -10,6 +10,7 @@ public class Table{
     private ArrayList<Row> rows;
     private ArrayList<Column> columns;
     private String tablePath;
+    private long id;
     //private ArrayList<String> types;
     //private int numOfColumns;
     //private ArrayList<String> columnNames;
@@ -19,6 +20,7 @@ public class Table{
         this.rows = new ArrayList<>();
         this.columns = new ArrayList<>();
         this.tablePath = basePath + File.separator + tableName + suffix;
+        this.id = 0;
     }
 
     public String getTableName(){return tableName;}
@@ -46,12 +48,13 @@ public class Table{
     }
 
     public long generateRowIdentifier(){  //parse through all the ids, and find the largest id, then add one to generate a new one
-        long maxId = 0;
-        for (Row row : this.rows) {
-            long rowId = row.getPrimaryKey();
-            maxId = Math.max(rowId, maxId);
-        }
-        return maxId + 1;
+//        long maxId = 0;
+//        for (Row row : this.rows) {
+//            currentId = row.getPrimaryKey();
+//            //maxId = Math.max(rowId, maxId);
+//        }
+//        return maxId++;
+        return ++id;
     }
 
 

@@ -5,7 +5,7 @@ import java.util.*;
 
 public class Table{
     final public static String ID_COL = "id";
-    final private static String suffix = ".tab";
+    final public static String suffix = ".tab";
     private String tableName;
     private ArrayList<Row> rows;
     private ArrayList<Column> columns;

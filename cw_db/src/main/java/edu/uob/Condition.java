@@ -80,7 +80,8 @@ public class Condition{
                 String name = tokens.get(i - 1).toLowerCase();
                 String value = tokens.get(i + 1);
 
-                if (NodeCheck.isAttributeName(name) && NodeCheck.isValue(value)) {
+                if (NodeCheck.isValue(value)) {
+                    //if (NodeCheck.isAttributeName(name) && NodeCheck.isValue(value)) {
                     if (value.startsWith("'") && value.endsWith("'")) {
                         value = value.substring(1, value.length() - 1);
                     }
@@ -134,9 +135,10 @@ public class Condition{
                 }
             }
         } else {
-            if (attributeName.equals(Table.ID_COL)) {
+            if (attributeName.equalsIgnoreCase(Table.ID_COL)) {
                 String idNum = String.valueOf(row.getPrimaryKey());
-                if (idNum == null || value == null) {
+                //if (idNum == null || value == null) {
+                if (value == null) {
                     return false;
                 }
                 try {
@@ -220,7 +222,7 @@ public class Condition{
         return false;
     }
 
-    // 判断是否为数值型字符串
+
 
     private static void combineConditions(Stack<String> operatorStack, Stack<Condition> conditionStack) {
         if (conditionStack.size() < 2) {

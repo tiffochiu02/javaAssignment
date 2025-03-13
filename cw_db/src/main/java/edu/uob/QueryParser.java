@@ -28,7 +28,7 @@ public class QueryParser {
                     throw new IOException();
                 }
                 //conditionTokens = (ArrayList<String>) tokens.subList(tokens.indexOf("WHERE"), tokens.size()-1);
-                System.out.println(conditionTokens);
+                System.out.println("condition tokens = " + conditionTokens);
             }
         }
         String command = tokens.get(0).toUpperCase();
@@ -76,8 +76,8 @@ public class QueryParser {
     }
     //CREATE DATABASE markbook;
     public String createDatabase(ArrayList<String> tokens, DBServer server) throws IOException {
-
         String dbName = tokens.get(2).toLowerCase();
+        if(!NodeCheck.isAttributeName(dbName)) throw new IOException();
         File allDatabases = new File(server.getStorageFolderPath());
         for(File file : Objects.requireNonNull(allDatabases.listFiles())) {
             if(file.getName().equals(dbName)) {throw new IOException();}
@@ -109,10 +109,10 @@ public class QueryParser {
             }
         }
         String tableName = tokens.get(2).toLowerCase();
+        if(!NodeCheck.isAttributeName(tableName)) throw new IOException();
         File currentDirectory = new File(server.getCurrentDatabase().getPath());
         for(File file : Objects.requireNonNull(currentDirectory.listFiles())) {
             if(file.getName().equals(tableName + Table.suffix)) {
-                System.out.println("Retrieved name: " + file.getName() + " from command: " + tableName);
                 throw new IOException("[ERROR] Duplicate table name: " + tableName);
             }
         }
@@ -148,6 +148,8 @@ public class QueryParser {
         for(String token : tokens) {
             if(token.equalsIgnoreCase("FROM")) {
                 indexOfFrom = tokens.indexOf(token);
+                System.out.println("indexOfFrom: " + indexOfFrom);
+                System.out.println("token size: " + tokens.size());
             }
         }
         boolean hasConditions = !conditionTokens.isEmpty();
@@ -156,11 +158,9 @@ public class QueryParser {
                 throw new IOException();
             }
         } else{
-            System.out.println("Hereeeee No conditions detected");
             if(tokens.size() != indexOfFrom + 3) throw new IOException();
         }
         String tableName = tokens.get(indexOfFrom + 1).toLowerCase();
-        System.out.println("hereeeee table name: " + tableName);
         Table selectedTable = server.getCurrentDatabase().getTables(tableName);
         //error detection: if table name doesn't exist
         if (selectedTable == null) {
@@ -183,7 +183,7 @@ public class QueryParser {
             }
             selectedColumns.add(token);
         }
-        System.out.println("selectedColumns: " + selectedColumns);
+
         //        Conditions cond PARSE
         //rowString.append(Table.ID_COL + "\t");
         if (selectedColumns.size() == 1 && selectedColumns.get(0).equals("*")) {
@@ -211,7 +211,7 @@ public class QueryParser {
                     }
                 }
             }
-            System.out.println("selected table's column names: " + selectedTable.getColumnNames());
+
             if(!allSelectedColExist) {return "[ERROR] Column " + notExistingColumn + " not found";}
             for (String selectedColumn : selectedColumns) {
                 rowString.append(selectedColumn).append("\t");
@@ -221,7 +221,6 @@ public class QueryParser {
 //                if (cond.check(row))
                 if(hasConditions){
                     if(executeCondition(conditionTokens, selectedTable.getRows().get(iRow))) {
-                        System.out.println("rows that meet the conditions: " + selectedTable.getRows().get(iRow).toString(true) + "\n");
                         rowString.append(selectedTable.getRows().get(iRow).toString(selectedColumns)).append("\n");
                     }
                 } else {
@@ -252,6 +251,8 @@ public class QueryParser {
         int startIndex = tokens.indexOf("(") + 1;
         int endIndex = tokens.indexOf(")");
         if(endIndex == startIndex) {throw new IOException();}
+
+
         ArrayList<String> columnStrings = new ArrayList<>();
         for (int i = startIndex; i < endIndex; i += 1) {
             String token = tokens.get(i);
@@ -264,6 +265,7 @@ public class QueryParser {
             rowString.append(token).append("\t");
             columnStrings.add(token);
         }
+        System.out.println("check for special values columnStrings: " + columnStrings);
         if(columnStrings.size() != table.getColumnNames().size()) {
             throw new IOException();
         }
@@ -338,7 +340,7 @@ public class QueryParser {
     public String alterTypeAdd(ArrayList<String> tokens, DBServer server) throws IOException {
         String tableName = tokens.get(2).toLowerCase();
         String columnName = tokens.get(4);
-        if(columnName.equalsIgnoreCase(Table.ID_COL)) throw new NoSuchElementException();
+        if(columnName.equalsIgnoreCase(Table.ID_COL) || !NodeCheck.isAttributeName(columnName)) throw new NoSuchElementException();
         Table table = server.getCurrentDatabase().getTables(tableName);
         for(String colName: table.getColumnNames()) {
             if(colName.equalsIgnoreCase(columnName)) throw new IOException();
@@ -351,6 +353,7 @@ public class QueryParser {
     public String alterTypeDrop(ArrayList<String> tokens, DBServer server) throws IOException, NoSuchElementException{ //try drop id
         String tableName = tokens.get(2).toLowerCase();
         String columnName = tokens.get(4);
+        if(!NodeCheck.isAttributeName(tableName) || !NodeCheck.isAttributeName(columnName)) { throw new IOException(); }
         Table table = server.getCurrentDatabase().getTables(tableName);
         boolean found = false;
         for(String colName: table.getColumnNames()) {
@@ -359,7 +362,7 @@ public class QueryParser {
                 columnName = colName;
             }
         }
-        if(!found) throw new IOException();
+        if(!found) throw new NoSuchElementException();
         System.out.println("reached here");
         table.removeColumn(columnName);
         table.saveTable();
@@ -377,8 +380,10 @@ public class QueryParser {
     }
     //"DELETE " "FROM " [TableName] " WHERE " <Condition>
     public String deleteObject(ArrayList<String> tokens, DBServer server, ArrayList<String> conditionTokens) throws IOException  {
+        if(server.getCurrentDatabase() == null) return "[ERROR] no database selected";
         if(!tokens.get(1).equalsIgnoreCase("FROM") || !tokens.get(3).equalsIgnoreCase("WHERE")) return "[ERROR] Invalid command";
         String tableName = tokens.get(2).toLowerCase();
+        if(!NodeCheck.isAttributeName(tableName)) throw new IOException();
         Table table = server.getCurrentDatabase().getTables(tableName);
         Iterator<Row> iterator = table.getRows().iterator();
         while (iterator.hasNext()) {
@@ -387,11 +392,11 @@ public class QueryParser {
                 iterator.remove(); // safe removal
             }
         }
-        int id = 1;
-        for(Row row : table.getRows()){
-            row.setPrimaryKey(id);
-            id++;
-        }
+//        int id = 1;
+//        for(Row row : table.getRows()){
+//            row.setPrimaryKey(id);
+//            id++;
+//        }
         table.saveTable();
         return "[OK] deleted from Table " + tableName;
     }
@@ -402,7 +407,9 @@ public class QueryParser {
     //<NameValuePair>::=  [AttributeName] "=" [Value]
     //UPDATE marks SET mark = 40, PASS = TRUE, rank > 5 WHERE age < 40;
     public String updateObject(ArrayList<String> tokens, DBServer server, ArrayList<String> conditionTokens) throws IOException {
+        if(server.getCurrentDatabase() == null) return "[ERROR] no database selected";
         String tableName = tokens.get(1).toLowerCase();
+        if(!NodeCheck.isAttributeName(tableName)) throw new IOException();
         Table table = server.getCurrentDatabase().getTables(tableName);
         int indexOfSet = 0;
         int indexOfWhere = 0;
@@ -419,7 +426,7 @@ public class QueryParser {
         for(int i = indexOfSet + 1; i < indexOfWhere; i++){
             wholeList.add(tokens.get(i));
         }
-        ArrayList<ArrayList> nameValueList = new ArrayList<>(); //an arraylist that stores all the subLists
+        ArrayList<ArrayList<String>> nameValueList = new ArrayList<>(); //an arraylist that stores all the subLists
         int start = 0;
         boolean hasMultipleValues = false;
         for(int i = start; i < wholeList.size(); i++) {
@@ -432,9 +439,12 @@ public class QueryParser {
         }
         if(!hasMultipleValues){nameValueList.add(wholeList);}
         System.out.println("reached here! nameValueList: " + nameValueList);
-        for(ArrayList pair : nameValueList){   //error handling!!
-            String attributeName = pair.get(0).toString().toLowerCase();
-            String value = pair.get(2).toString();
+        for(ArrayList<String> pair : nameValueList){   //error handling!!
+            String attributeName = pair.get(0).toLowerCase();
+            if(!NodeCheck.isAttributeName(attributeName)) throw new IOException();
+            if(!pair.get(1).equals("=")) throw new IOException();
+            String value = pair.get(2);
+            if(!NodeCheck.isValue(value)) throw new IOException();
             if(value.startsWith("'") && value.endsWith("'")){
                 value = value.substring(1,value.length()-1);
             }

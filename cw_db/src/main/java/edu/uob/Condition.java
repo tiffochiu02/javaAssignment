@@ -14,155 +14,234 @@ import java.util.ArrayList;
 //two constructors for condition - one for simple, the other for parent
 //two stacks, one for comparators and bool operators, the other for condition
 public class Condition{
-   String attributeName;
-   String value;
-   String comparator;
-   String boolOperator;
-   ArrayList<Condition> subConditions;
+    String attributeName;
+    String value;
+    String comparator;
+    String boolOperator;
+    ArrayList<Condition> subConditions;
 
 
-   //simple condition
-   public Condition(String attributeName, String value, String comparator){
-       this.attributeName = attributeName;
-       this.value = value;
-       this.comparator = comparator;
-       this.subConditions = new ArrayList<>();
-   }
-   //compound condition
-   public Condition(String boolOperator) {
-       this.boolOperator = boolOperator;
-       this.subConditions = new ArrayList<>();
-   }
-   public void addSubCondition(Condition subCondition){
-       subConditions.add(subCondition);
-   }
+    //simple condition
+    public Condition(String attributeName, String value, String comparator){
+        this.attributeName = attributeName;
+        this.value = value;
+        this.comparator = comparator;
+        this.subConditions = new ArrayList<>();
+    }
+    //compound condition
+    public Condition(String boolOperator) {
+        this.boolOperator = boolOperator;
+        this.subConditions = new ArrayList<>();
+    }
+    public void addSubCondition(Condition subCondition){
+        subConditions.add(subCondition);
+    }
 
-// age > 20 AND ((PASS == TRUE AND EMAIL LIKE "XXX") OR rank > 15) OR class == 2
-   public static Condition parseCondition(ArrayList<String> tokens) throws IOException{
-       Stack<String> operatorStack = new Stack<>();
-       Stack<Condition> conditionStack = new Stack<>();
-       for(String token : tokens) {
-           if(token.equals("(")) {
-               operatorStack.push(token);
-           } else if(token.equals(")")){
-               while(!operatorStack.isEmpty() && !operatorStack.peek().equals("(")){
-                   Condition right = conditionStack.pop();
-                   Condition left = conditionStack.pop();
-                   Condition parent = new Condition(operatorStack.pop());
-                   parent.addSubCondition(left);
-                   parent.addSubCondition(right);
-                   conditionStack.push(parent);
-               }
-               operatorStack.pop(); //if the token is ")" and the top of stack is "(" then pop the "(" to complete the condition
-           } else if(NodeCheck.isBoolOperator(token)) {
-               operatorStack.push(token);
-           } else if (NodeCheck.isComparator(token)) {
-               int index = tokens.indexOf(token);
-               if (index == 0 || index == tokens.size() - 1) {
-                   throw new IOException();
-               }
-               String name = tokens.get(index - 1).toLowerCase();
-               String value = tokens.get(index + 1);
-               if(NodeCheck.isAttributeName(name) && NodeCheck.isValue(value)) {
-                   if(value.startsWith("'") && value.endsWith("'")) {
-                       value = value.substring(1, value.length() - 1);
-                   }
-                   Condition simpleCondition = new Condition(name, value, token);
-                   conditionStack.push(simpleCondition);
-               }
-           }
-       }
+    // age > 20 AND ((PASS == TRUE AND EMAIL LIKE "XXX") OR rank > 15) OR class == 2
+    public static Condition parseCondition(ArrayList<String> tokens) throws IOException {
+        Stack<String> operatorStack = new Stack<>();
+        Stack<Condition> conditionStack = new Stack<>();
+        int numOfLeftParenthesis = 0;
+        int numOfRightParenthesis = 0;
+        for(String token:tokens){
+            if(token.equals("(")){
+                numOfLeftParenthesis++;
+            }
+            else if(token.equals(")")){
+                numOfRightParenthesis++;
+            }
+        }
+        if(numOfLeftParenthesis != numOfRightParenthesis){
+            throw new IOException(numOfLeftParenthesis+" "+numOfRightParenthesis);
+        }
 
-        //the case: age < 10 AND PASS == TRUE; if there are no brackets
-        //if the operator not empty, then it means there is only boolean operator left
-        // so we need to finally combine the two conditions into a parent condition
-       while(!operatorStack.isEmpty()){
-           Condition right = conditionStack.pop();
-           Condition left = conditionStack.pop();
-           Condition parent = new Condition(operatorStack.pop());
-           parent.addSubCondition(left);
-           parent.addSubCondition(right);
-           conditionStack.push(parent);
-       }
-       if (conditionStack.size() != 1) {
-           throw new IOException();
-       }
-       return conditionStack.pop();
-   }
+        for (int i = 0; i < tokens.size(); i++) {
+            String token = tokens.get(i);
 
-   public boolean checkCondition(Row row) throws NoSuchElementException{
-       System.out.println("Checking condition in Condition class");
-       System.out.println(attributeName + comparator + value);
-       if(!subConditions.isEmpty()){
-           if(boolOperator.equals("AND")){
-               boolean isMatch = true;
-               for(Condition subCondition : subConditions){
-                   if (!subCondition.checkCondition(row)) {
-                       isMatch = false;
-                   }
-               }
-               return isMatch;
-           } else if(boolOperator.equals("OR")){
-               for(Condition subCondition : subConditions){
-                   if(subCondition.checkCondition(row)){
-                       return true;
-                   }
-               }
-           }
+            if (token.equals("(")) {
+                operatorStack.push(token);
+            } else if (token.equals(")")) {
+                while (!operatorStack.isEmpty() && !operatorStack.peek().equals("(")) {
+                    System.out.println("Popping operator inside parentheses: " + operatorStack.peek());
+                    combineConditions(operatorStack, conditionStack);
+                }
+                operatorStack.pop();  // Pop the "("
+            } else if (NodeCheck.isBoolOperator(token)) {
+                while (!operatorStack.isEmpty() && hasHigherPrecedence(operatorStack.peek(), token)) {
+                    System.out.println("Popping operator due to precedence: " + operatorStack.peek());
+                    combineConditions(operatorStack, conditionStack);
+                }
+                operatorStack.push(token);  // Push the current Boolean operator
+            } else if (NodeCheck.isComparator(token)) {
+                if (i == 0 || i == tokens.size() - 1) {
+                    throw new IOException();
+                }
 
-       } else {
-           if(attributeName.equals(Table.ID_COL)){
-               String idNum = String.valueOf(row.getPrimaryKey());
-               switch(comparator){
-                   case "==":
-                       return idNum.equals(value);
-                   case "!=":
-                       return !idNum.equals(value);
-                   case ">":
-                       return idNum.compareTo(value) > 0;
-                   case "<":
-                       return idNum.compareTo(value) < 0;
-                   case ">=":
-                       return idNum.compareTo(value) >= 0;
-                   case "<=":
-                       return idNum.compareTo(value) <= 0;
-                   case "LIKE":
-                       return idNum.contains(value);
-                   default: return false;
-               }
-           } else {
-               String rowValue = row.getValue(attributeName);
-               if (rowValue == null) {
-                   throw new NoSuchElementException();
-               }
-               if (value.startsWith("'") && value.endsWith("'")) {
-                   value = value.substring(1, value.length() - 1);
-               } else {
-                   value = value.toLowerCase();
-                   rowValue = rowValue.toLowerCase();
-               }
-               System.out.println("retrieved row Value: " + rowValue + "; retrieved attribute: " + attributeName +
-                       "; retrieved comparison: " + comparator + "; compared value: " + value);
-               switch (comparator) {
-                   case "==":
-                       return rowValue.equals(value);
-                   case "!=":
-                       return !rowValue.equals(value);
-                   case ">":
-                       return rowValue.compareTo(value) > 0;
-                   case "<":
-                       return rowValue.compareTo(value) < 0;
-                   case ">=":
-                       return rowValue.compareTo(value) >= 0;
-                   case "<=":
-                       return rowValue.compareTo(value) <= 0;
-                   case "LIKE":
-                       return rowValue.contains(value);
-                   default:
-                       return false;
-               }
-           }
-       }
-       return false;
-   }
+                String name = tokens.get(i - 1).toLowerCase();
+                String value = tokens.get(i + 1);
+
+                if (NodeCheck.isAttributeName(name) && NodeCheck.isValue(value)) {
+                    if (value.startsWith("'") && value.endsWith("'")) {
+                        value = value.substring(1, value.length() - 1);
+                    }
+                    Condition simpleCondition = new Condition(name, value, token);
+                    System.out.println("Created condition: " + name + " " + token + " " + value); // 检查条件
+                    conditionStack.push(simpleCondition);
+                }
+            }
+        }
+
+        while (!operatorStack.isEmpty()) {
+            combineConditions(operatorStack, conditionStack);
+        }
+
+        if (conditionStack.size() != 1) {
+            throw new IOException("Error parsing condition: unmatched conditions");
+        }
+
+        return conditionStack.pop();
+    }
+
+
+    private boolean isNumeric(String str) {
+        if (str == null) return false;
+        try {
+            Double.parseDouble(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    //SELECT * FROM numbers WHERE ((num < 15) or (flag == TRUE)) and (id == 4);
+    public boolean checkCondition(Row row) throws NoSuchElementException {
+        System.out.println("Checking condition in Condition class");
+        System.out.println(attributeName + comparator + value);
+
+        if (!subConditions.isEmpty()) {
+            if (boolOperator.equalsIgnoreCase("AND")) {
+                for (Condition subCondition : subConditions) {
+                    if (!subCondition.checkCondition(row)) {
+                        return false;
+                    }
+                }
+                return true;
+            } else if (boolOperator.equalsIgnoreCase("OR")) {
+                for (Condition subCondition : subConditions) {
+                    if (subCondition.checkCondition(row)) {
+                        return true;
+                    }
+                }
+            }
+        } else {
+            if (attributeName.equals(Table.ID_COL)) {
+                String idNum = String.valueOf(row.getPrimaryKey());
+                if (idNum == null || value == null) {
+                    return false;
+                }
+                try {
+                    double idNumValue = Double.parseDouble(idNum);
+                    double valueNum = Double.parseDouble(value);
+                    switch (comparator) {
+                        case "==":
+                            return idNumValue == valueNum;
+                        case "!=":
+                            return idNumValue != valueNum;
+                        case ">":
+                            return idNumValue > valueNum;
+                        case "<":
+                            return idNumValue < valueNum;
+                        case ">=":
+                            return idNumValue >= valueNum;
+                        case "<=":
+                            return idNumValue <= valueNum;
+                        case "LIKE":
+                            return idNum.contains(value);  // LIKE 比较仍然按字符串匹配
+                        default:
+                            return false;
+                    }
+                } catch (NumberFormatException e) {
+                    throw new NoSuchElementException("Invalid number format: " + idNum + " or " + value);
+                }
+            } else {
+                String rowValue = row.getValue(attributeName);
+                if (rowValue == null) {
+                    throw new NoSuchElementException();
+                }
+                if (value.startsWith("'") && value.endsWith("'")) {
+                    value = value.substring(1, value.length() - 1);
+                } else {
+                    value = value.toLowerCase();
+                    rowValue = rowValue.toLowerCase();
+                }
+
+                System.out.println("retrieved row Value: " + rowValue + "; retrieved attribute: " + attributeName +
+                        "; retrieved comparison: " + comparator + "; compared value: " + value);
+
+                try {
+                    if (isNumeric(rowValue) && isNumeric(value)) {
+                        double rowValueNum = Double.parseDouble(rowValue);
+                        double valueNum = Double.parseDouble(value);
+
+                        switch (comparator) {
+                            case "==":
+                                return rowValueNum == valueNum;
+                            case "!=":
+                                return rowValueNum != valueNum;
+                            case ">":
+                                return rowValueNum > valueNum;
+                            case "<":
+                                return rowValueNum < valueNum;
+                            case ">=":
+                                return rowValueNum >= valueNum;
+                            case "<=":
+                                return rowValueNum <= valueNum;
+                            default:
+                                return false;
+                        }
+                    } else {
+                        // 字符串比较
+                        switch (comparator) {
+                            case "==":
+                                return rowValue.equals(value);
+                            case "!=":
+                                return !rowValue.equals(value);
+                            case "LIKE":
+                                return rowValue.contains(value);
+                            default:
+                                return false;
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    throw new NoSuchElementException("Invalid number format in comparison: " + rowValue + " and " + value);
+                }
+            }
+        }
+        return false;
+    }
+
+    // 判断是否为数值型字符串
+
+    private static void combineConditions(Stack<String> operatorStack, Stack<Condition> conditionStack) {
+        if (conditionStack.size() < 2) {
+            System.out.println("Insufficient conditions to combine. Stack size:" + conditionStack.size());
+            return;
+        }
+        Condition right = conditionStack.pop();
+        Condition left = conditionStack.pop();
+        Condition parent = new Condition(operatorStack.pop());
+        parent.addSubCondition(left);
+        parent.addSubCondition(right);
+        conditionStack.push(parent);
+
+        System.out.println("Combine conditions with operator: " + parent.boolOperator);
+    }
+
+    private static boolean hasHigherPrecedence(String op1, String op2) {
+        Map<String, Integer> precedence = Map.of(
+                "AND", 2,
+                "OR", 1
+        );
+        return precedence.getOrDefault(op1, 0) >= precedence.getOrDefault(op2, 0);
+    }
 }

@@ -20,6 +20,7 @@ public class Row {
     public long getPrimaryKey() {
         return primaryKey;
     }
+    //public long getPrimaryKey(Map<String,String> rowValues) {return primaryKey;}
     public void setPrimaryKey(long primaryKey) {
         this.primaryKey = primaryKey;
     }
@@ -84,5 +85,3 @@ public class Row {
     }
 
 }
-
-

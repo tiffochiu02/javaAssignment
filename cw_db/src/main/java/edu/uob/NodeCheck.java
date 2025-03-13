@@ -66,9 +66,9 @@ public class NodeCheck {
 
     public static boolean isPlainText(String token) {
         for(char c : token.toCharArray()) {
-            if(Character.isLetterOrDigit(c)) {return true;}
+            if(!Character.isLetterOrDigit(c)) {return false;}
         }
-        return false;
+        return true;
     }
 
 
@@ -100,33 +100,43 @@ public class NodeCheck {
     }
 
     public static boolean isCharLiteral(char c){
-        if(Character.isLetter(c) || Character.isSpaceChar(c) || isSymbol(c) || Character.isDigit(c)){ return true; }
+        if(Character.isLetter(c) || isSymbol(c) || Character.isDigit(c) || Character.isSpaceChar(c)){ return true; }
         return false;
     }
 
     public static boolean isStringLiteral(String token){
         for(char c : token.toCharArray()){
-            if(isCharLiteral(c) || Character.isSpaceChar(c)){ return true; }
-            //if(isCharLiteral(c) || isStringLiteral(token)){ return true; }
+            if(!isCharLiteral(c)){ return false; }
         }
-        return false;
+        return true;
     }
     // [Value]::=  "'" [StringLiteral] "'" | [BooleanLiteral] | [FloatLiteral] | [IntegerLiteral] | "NULL"
     public static boolean isValue(String token){
         if(token.startsWith("'") && token.endsWith("'")){
-            String sub = token.substring(0, token.length()-1);
+            String sub = token.substring(1, token.length()-1);
             if(isStringLiteral(sub)){ return true; }
         }
         else if(isBooleanLiteral(token)){ return true; }
         else if(isFloatLiteral(token)){ return true; }
         else if(isIntegerLiteral(token)){ return true; }
+        else if (token.equalsIgnoreCase("NULL")) {
+            return true;
+        }
 
-            return false;
+        return false;
+    }
+    public static boolean isKeyword(String token){
+        String[] commands = {"SELECT","INSERT","INTO","DELETE","UPDATE","CREATE",
+                "UPDATE","DROP","ALTER","WHERE","JOIN","USE","FROM","TABLE","DATABASE","SET","ON"};
+        for(String command:commands){
+            if(token.equalsIgnoreCase(command)) return true;
+        }
+        return false;
     }
 
     public static boolean isAttributeName(String token){
         if(isPlainText(token) && !isBoolOperator(token) && !token.equalsIgnoreCase("LIKE")
-                && !isBooleanLiteral(token)){
+                && !isBooleanLiteral(token) && !token.equalsIgnoreCase(Table.ID_COL) && !isKeyword(token)){
             return true;
         }
         return false;

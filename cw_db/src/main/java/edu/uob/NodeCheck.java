@@ -45,7 +45,7 @@ public class NodeCheck {
     static String[] operators = {"AND", "OR"};
     public static boolean isBoolOperator(String token) {
         for (String operator : operators) {
-            if(token.equals(operator)){
+            if(token.equalsIgnoreCase(operator)){
                 return true;
             }
         }
@@ -74,11 +74,13 @@ public class NodeCheck {
 
 
     public static boolean isIntegerLiteral(String token){
+        if (token == null || token.isEmpty()) {
+            return false;
+        }
         if(isdigitSequence(token)){ return true; }
-
         if(token.charAt(0) == '-' || token.charAt(0) == '+'){
             String sub = token.substring(1);
-            if(isdigitSequence(sub)){ return true; }
+            if(!sub.isEmpty() && isdigitSequence(sub)){ return true; }
         }
         return false;
     }
@@ -115,14 +117,18 @@ public class NodeCheck {
             String sub = token.substring(0, token.length()-1);
             if(isStringLiteral(sub)){ return true; }
         }
-        if(isBooleanLiteral(token)){ return true; }
-        if(isFloatLiteral(token)){ return true; }
-        if(isIntegerLiteral(token)){ return true; }
-        return false;
+        else if(isBooleanLiteral(token)){ return true; }
+        else if(isFloatLiteral(token)){ return true; }
+        else if(isIntegerLiteral(token)){ return true; }
+
+            return false;
     }
 
     public static boolean isAttributeName(String token){
-        if(isPlainText(token) && !isBoolOperator(token) && !token.equalsIgnoreCase("LIKE")){ return true; }
+        if(isPlainText(token) && !isBoolOperator(token) && !token.equalsIgnoreCase("LIKE")
+                && !isBooleanLiteral(token)){
+            return true;
+        }
         return false;
     }
 

@@ -1,7 +1,8 @@
 package edu.uob;
 
+import org.w3c.dom.Node;
+
 import java.io.*;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -23,7 +24,7 @@ public class QueryParser {
                 for(int i = indexOfWhere + 1; i < tokens.size()-1; i++) {
                     conditionTokens.add(tokens.get(i));
                 }
-                if (conditionTokens.size() == 0) {
+                if (conditionTokens.isEmpty()) {
                     throw new IOException();
                 }
                 //conditionTokens = (ArrayList<String>) tokens.subList(tokens.indexOf("WHERE"), tokens.size()-1);
@@ -62,7 +63,7 @@ public class QueryParser {
 
     // CREATE TABLE marks (name, mark, pass);
     // CREATE DATABASE markbook;
-    public String createObject(ArrayList<String> tokens, DBServer server) {
+    public String createObject(ArrayList<String> tokens, DBServer server) throws IOException {
         String object = tokens.get(1).toUpperCase();
         switch(object) {
             case "TABLE":
@@ -74,28 +75,72 @@ public class QueryParser {
         }
     }
     //CREATE DATABASE markbook;
-    public String createDatabase(ArrayList<String> tokens, DBServer server) {
+    public String createDatabase(ArrayList<String> tokens, DBServer server) throws IOException {
+
         String dbName = tokens.get(2).toLowerCase();
+        File allDatabases = new File(server.getStorageFolderPath());
+        for(File file : Objects.requireNonNull(allDatabases.listFiles())) {
+            if(file.getName().equals(dbName)) {throw new IOException();}
+        }
         //create a File object representing the directory
         Database newDirectory = new Database(dbName, server.getStorageFolderPath());
         //if(!newDirectory.exists()) {return "[ERROR] Directory does not exist: " + newDirectory.getAbsolutePath();}
         return "[OK]" + newDirectory.getPath();
     }
     //CREATE TABLE marks (name, mark, pass);
-    public String createTable(ArrayList<String> tokens, DBServer server) {
+    public String createTable(ArrayList<String> tokens, DBServer server) throws IOException {
+        if (server.getCurrentDatabase() == null) return "[ERROR] no database selected";
+        ArrayList<String> columnStrings = new ArrayList<>();
+        for (int i = 3; i < tokens.size() - 1; i++) {
+            columnStrings.add(tokens.get(i));
+        }
+        System.out.println("columnStrings: " + columnStrings);
+        int numOfTokens = columnStrings.size();
+        if(numOfTokens == 1 || numOfTokens == 2) {throw new IOException();}
+        else if(numOfTokens > 2){
+            if(!columnStrings.get(0).equals("(") || !columnStrings.get(columnStrings.size()-1).equals(")")){
+                throw new IOException();
+            }
+            for(int i = 5; i < tokens.size(); i+=2) {
+                if(tokens.get(i).equals(")")) {break;}
+                if(!tokens.get(i).equals(",")) {
+                    throw new IOException();
+                }
+            }
+        }
         String tableName = tokens.get(2).toLowerCase();
+        File currentDirectory = new File(server.getCurrentDatabase().getPath());
+        for(File file : Objects.requireNonNull(currentDirectory.listFiles())) {
+            if(file.getName().equals(tableName + Table.suffix)) {
+                System.out.println("Retrieved name: " + file.getName() + " from command: " + tableName);
+                throw new IOException("[ERROR] Duplicate table name: " + tableName);
+            }
+        }
         Table newTable = new Table(tableName, server.getCurrentDatabase().getPath());
 
-        for(int i = 4; i<tokens.size(); i+=2) {
-            if(tokens.get(i).equals(";")){break;}
-            newTable.addColumn(tokens.get(i), "");
+        if(numOfTokens > 0) {
+            for (int i = 4; i < tokens.size(); i += 2) {
+                if (tokens.get(i).equals(";")) {
+                    break;
+                }
+                if (tokens.get(i).equals(",")||!NodeCheck.isAttributeName(tokens.get(i))) {
+                    throw new IOException();
+                }
+                for (String ColumnName : newTable.getColumnNames()) {
+                    if (tokens.get(i).equals(ColumnName)) {
+                        throw new IOException();
+                    }
+                }
+                newTable.addColumn(tokens.get(i), "");
+            }
         }
         newTable.saveTable(); //save the table after create (filewriter)
         server.getCurrentDatabase().addTable(newTable); // add the table to the current database
         return "[OK] Created table " + tableName;
     }
+
     //SELECT * FROM marks;
- //SELECT id,mark FROM marks WHERE pass == FALSE;
+    //SELECT id,mark FROM marks WHERE pass == FALSE;
     public String selectTable (ArrayList<String> tokens, DBServer server, ArrayList<String> conditionTokens) throws IOException, NoSuchElementException {
         if (server.getCurrentDatabase() == null) return "[ERROR] no database selected";
         int indexOfFrom = 0;
@@ -104,13 +149,18 @@ public class QueryParser {
             if(token.equalsIgnoreCase("FROM")) {
                 indexOfFrom = tokens.indexOf(token);
             }
-            if(token.equalsIgnoreCase("SELECT")) {
-                indexOfSelect = tokens.indexOf(token);
-            }
         }
-        //int indexOfFrom = tokens.indexOf("FROM".toUpperCase());
         boolean hasConditions = !conditionTokens.isEmpty();
-        String tableName = tokens.get(indexOfFrom + 1);
+        if(hasConditions) {
+            if(!tokens.get(indexOfFrom + 2).equalsIgnoreCase("WHERE")){
+                throw new IOException();
+            }
+        } else{
+            System.out.println("Hereeeee No conditions detected");
+            if(tokens.size() != indexOfFrom + 3) throw new IOException();
+        }
+        String tableName = tokens.get(indexOfFrom + 1).toLowerCase();
+        System.out.println("hereeeee table name: " + tableName);
         Table selectedTable = server.getCurrentDatabase().getTables(tableName);
         //error detection: if table name doesn't exist
         if (selectedTable == null) {
@@ -119,14 +169,21 @@ public class QueryParser {
         StringBuilder rowString = new StringBuilder();
 
         ArrayList<String> selectedColumns = new ArrayList<>();
-        for (int j = indexOfSelect + 1; j < indexOfFrom; j += 1) {
+//        for (int j = indexOfSelect + 1; j < indexOfFrom; j += 1) {
+//            String token = tokens.get(j);
+//            if (!token.equals(",") && !token.isEmpty()) {
+//                selectedColumns.add(token);
+//            }
+//        }
+        for (int j = indexOfSelect + 1; j < indexOfFrom; j += 2) {
             String token = tokens.get(j);
-            if (!token.equals(",") && !token.isEmpty()) {
-                selectedColumns.add(token);
+            if(token.equalsIgnoreCase(tokens.get(indexOfFrom + 1))) { break; }
+            if (token.equals(",")) {
+                throw new IOException();
             }
+            selectedColumns.add(token);
         }
-        System.out.println("reached here hihihihihi! " + selectedColumns);
-
+        System.out.println("selectedColumns: " + selectedColumns);
         //        Conditions cond PARSE
         //rowString.append(Table.ID_COL + "\t");
         if (selectedColumns.size() == 1 && selectedColumns.get(0).equals("*")) {
@@ -166,36 +223,52 @@ public class QueryParser {
                     if(executeCondition(conditionTokens, selectedTable.getRows().get(iRow))) {
                         System.out.println("rows that meet the conditions: " + selectedTable.getRows().get(iRow).toString(true) + "\n");
                         rowString.append(selectedTable.getRows().get(iRow).toString(selectedColumns)).append("\n");
-                        //System.out.println("selected columns: " + selectedColumns + "row " + selectedTable.getRows().get(iRow).toString(selectedColumns));
                     }
                 } else {
                     rowString.append(selectedTable.getRows().get(iRow).toString(selectedColumns)).append("\n");
                 }
-
             }
         }
         return "[OK]" + "\n" + rowString;
     }
-// INSERT INTO marks VALUES ('Chris', 20, FALSE);
-    private String insertIntoTable(ArrayList<String> tokens, DBServer server) {
+    // INSERT INTO marks VALUES ('Chris', 20, FALSE);
+    private String insertIntoTable(ArrayList<String> tokens, DBServer server) throws IOException, NoSuchElementException {
         if(!tokens.get(1).equalsIgnoreCase("INTO") || !tokens.get(3).equalsIgnoreCase("VALUES")) {
-            return "[ERROR} invalid command";
+            throw new IOException();
         }
         if (server.getCurrentDatabase() == null) return "[ERROR] no database selected";
+        if(!tokens.get(4).equals("(") || !tokens.get(tokens.indexOf(";")-1).equals(")")) {
+            throw new IOException();
+        }
+
         String tableName = tokens.get(2).toLowerCase();
         Table table = server.getCurrentDatabase().getTables(tableName);
+        //error detection: if table name doesn't exist
+        if (table == null) {
+            return "[ERROR] Table " + tableName + " not found";
+        }
+
         StringBuilder rowString = new StringBuilder();
         int startIndex = tokens.indexOf("(") + 1;
         int endIndex = tokens.indexOf(")");
+        if(endIndex == startIndex) {throw new IOException();}
+        ArrayList<String> columnStrings = new ArrayList<>();
         for (int i = startIndex; i < endIndex; i += 1) {
             String token = tokens.get(i);
-            if(token.startsWith("'") && token.endsWith("'")) {token = token.substring(1, token.length()-1);}
             if (token.equals(",")) {continue;}
+            if(!NodeCheck.isValue(token)){throw new IOException();}
+            if(token.startsWith("'") && token.endsWith("'")) {
+                token = token.substring(1, token.length()-1);
+                if(!NodeCheck.isStringLiteral(token)) {throw new IOException();}
+            }
             rowString.append(token).append("\t");
+            columnStrings.add(token);
+        }
+        if(columnStrings.size() != table.getColumnNames().size()) {
+            throw new IOException();
         }
         rowString.append("\n");
         String row = rowString.toString();
-        System.out.println("Row string: " + row);
         Row newRow = Row.fromString(row,table.getColumnNames(), false);
         if(newRow == null) {
             return "[ERROR] Inserted into table " + tableName + " failed";
@@ -244,13 +317,12 @@ public class QueryParser {
         }
         return "[OK] Database " + databaseName + " deleted";
     }
-   // "ALTER " "TABLE " [TableName] " " <AlterationType> " " [AttributeName]
+    // "ALTER " "TABLE " [TableName] " " <AlterationType> " " [AttributeName]
     //<AlterationType>  ::=  "ADD" | "DROP"
-    public String alterTable(ArrayList<String> tokens, DBServer server) {
+    public String alterTable(ArrayList<String> tokens, DBServer server) throws IOException{
         if(server.getCurrentDatabase() == null) return "[ERROR] no database selected";
-        if(!tokens.get(1).equalsIgnoreCase("TABLE")){
-            return "[ERROR] Invalid command" + tokens.get(1).toUpperCase();
-        }
+        if(!tokens.get(1).equalsIgnoreCase("TABLE")) throw new IOException();
+        if(tokens.size()!=6) throw new IOException();
         String object = tokens.get(3).toUpperCase();
         switch(object) {
             case "ADD":
@@ -263,22 +335,31 @@ public class QueryParser {
 
     }
 
-    public String alterTypeAdd(ArrayList<String> tokens, DBServer server) {
+    public String alterTypeAdd(ArrayList<String> tokens, DBServer server) throws IOException {
         String tableName = tokens.get(2).toLowerCase();
         String columnName = tokens.get(4);
+        if(columnName.equalsIgnoreCase(Table.ID_COL)) throw new NoSuchElementException();
         Table table = server.getCurrentDatabase().getTables(tableName);
+        for(String colName: table.getColumnNames()) {
+            if(colName.equalsIgnoreCase(columnName)) throw new IOException();
+        }
         table.addColumn(columnName,"");
         table.saveTable();
         return "[OK] " + columnName + " added";
 
     }
-    public String alterTypeDrop(ArrayList<String> tokens, DBServer server) {
+    public String alterTypeDrop(ArrayList<String> tokens, DBServer server) throws IOException, NoSuchElementException{ //try drop id
         String tableName = tokens.get(2).toLowerCase();
         String columnName = tokens.get(4);
         Table table = server.getCurrentDatabase().getTables(tableName);
-        if(!table.getColumnNames().contains(columnName)){
-            return "[ERROR] Column " + columnName + " not found";
+        boolean found = false;
+        for(String colName: table.getColumnNames()) {
+            if(colName.equalsIgnoreCase(columnName)) {
+                found = true;
+                columnName = colName;
+            }
         }
+        if(!found) throw new IOException();
         System.out.println("reached here");
         table.removeColumn(columnName);
         table.saveTable();
@@ -294,7 +375,7 @@ public class QueryParser {
         server.setCurrentDatabase(new Database(dbName,server.getStorageFolderPath()));
         return "[OK] Database in use";
     }
-//"DELETE " "FROM " [TableName] " WHERE " <Condition>
+    //"DELETE " "FROM " [TableName] " WHERE " <Condition>
     public String deleteObject(ArrayList<String> tokens, DBServer server, ArrayList<String> conditionTokens) throws IOException  {
         if(!tokens.get(1).equalsIgnoreCase("FROM") || !tokens.get(3).equalsIgnoreCase("WHERE")) return "[ERROR] Invalid command";
         String tableName = tokens.get(2).toLowerCase();
@@ -323,11 +404,9 @@ public class QueryParser {
     public String updateObject(ArrayList<String> tokens, DBServer server, ArrayList<String> conditionTokens) throws IOException {
         String tableName = tokens.get(1).toLowerCase();
         Table table = server.getCurrentDatabase().getTables(tableName);
-        //int indexOfWhere = tokens.indexOf("WHERE");
         int indexOfSet = 0;
         int indexOfWhere = 0;
         // the arraylist of the name value list
-
         ArrayList<String> wholeList = new ArrayList<>();
         for(String token : tokens){
             if (token.equalsIgnoreCase("SET")) {
@@ -340,9 +419,7 @@ public class QueryParser {
         for(int i = indexOfSet + 1; i < indexOfWhere; i++){
             wholeList.add(tokens.get(i));
         }
-
         ArrayList<ArrayList> nameValueList = new ArrayList<>(); //an arraylist that stores all the subLists
-
         int start = 0;
         boolean hasMultipleValues = false;
         for(int i = start; i < wholeList.size(); i++) {
@@ -354,7 +431,6 @@ public class QueryParser {
             }
         }
         if(!hasMultipleValues){nameValueList.add(wholeList);}
-        //int numOfPairs = nameValueList.size();
         System.out.println("reached here! nameValueList: " + nameValueList);
         for(ArrayList pair : nameValueList){   //error handling!!
             String attributeName = pair.get(0).toString().toLowerCase();
@@ -377,7 +453,7 @@ public class QueryParser {
     public String joinObject(ArrayList<String> tokens, DBServer server) {
         if(server.getCurrentDatabase() == null) return "[ERROR] no database selected";
         if(!tokens.get(2).equalsIgnoreCase("AND") || !tokens.get(4).equalsIgnoreCase("ON")
-         || !tokens.get(6).equalsIgnoreCase("AND")) {
+                || !tokens.get(6).equalsIgnoreCase("AND")) {
             return "[ERROR] Invalid command";
         }
         String table1Name = tokens.get(1).toLowerCase();
@@ -411,13 +487,11 @@ public class QueryParser {
                 } else{
                     rowItem1 = String.valueOf(table1.getRows().get(iRow).getValue(attributeName1)); //here!
                 }
-                System.out.println("reached here! rowItem1: " + rowItem1);
                 if(attributeName2.equalsIgnoreCase(Table.ID_COL)){
                     rowItem2 = String.valueOf(table2.getRows().get(jRow).getPrimaryKey());
                 } else{
                     rowItem2 = String.valueOf(table2.getRows().get(jRow).getValue(attributeName2));
                 }
-                System.out.println("reached here! rowItem2: " + rowItem2);
                 if(rowItem1.equals(rowItem2)){
                     newId++;
                     rowString.append(newId).append("\t");

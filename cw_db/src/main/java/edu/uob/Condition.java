@@ -41,19 +41,20 @@ public class Condition{
     public static Condition parseCondition(ArrayList<String> tokens) throws IOException {
         Stack<String> operatorStack = new Stack<>();
         Stack<Condition> conditionStack = new Stack<>();
-        int numOfLeftParenthesis = 0;
-        int numOfRightParenthesis = 0;
-        for(String token:tokens){
-            if(token.equals("(")){
-                numOfLeftParenthesis++;
-            }
-            else if(token.equals(")")){
-                numOfRightParenthesis++;
-            }
-        }
-        if(numOfLeftParenthesis != numOfRightParenthesis){
-            throw new IOException(numOfLeftParenthesis+" "+numOfRightParenthesis);
-        }
+        if(!isValidCondition(tokens)) throw new IOException("Invalid condition");
+//        int numOfLeftParenthesis = 0;
+//        int numOfRightParenthesis = 0;
+//        for(String token:tokens){
+//            if(token.equals("(")){
+//                numOfLeftParenthesis++;
+//            }
+//            else if(token.equals(")")){
+//                numOfRightParenthesis++;
+//            }
+//        }
+//        if(numOfLeftParenthesis != numOfRightParenthesis){
+//            throw new IOException(numOfLeftParenthesis+" "+numOfRightParenthesis);
+//        }
 
         for (int i = 0; i < tokens.size(); i++) {
             String token = tokens.get(i);
@@ -116,9 +117,6 @@ public class Condition{
 
     //SELECT * FROM numbers WHERE ((num < 15) or (flag == TRUE)) and (id == 4);
     public boolean checkCondition(Row row) throws NoSuchElementException {
-        System.out.println("Checking condition in Condition class");
-        System.out.println(attributeName + comparator + value);
-
         if (!subConditions.isEmpty()) {
             if (boolOperator.equalsIgnoreCase("AND")) {
                 for (Condition subCondition : subConditions) {
@@ -158,7 +156,7 @@ public class Condition{
                         case "<=":
                             return idNumValue <= valueNum;
                         case "LIKE":
-                            return idNum.contains(value);  // LIKE 比较仍然按字符串匹配
+                            return idNum.contains(value);
                         default:
                             return false;
                     }
@@ -184,7 +182,6 @@ public class Condition{
                     if (isNumeric(rowValue) && isNumeric(value)) {
                         double rowValueNum = Double.parseDouble(rowValue);
                         double valueNum = Double.parseDouble(value);
-
                         switch (comparator) {
                             case "==":
                                 return rowValueNum == valueNum;
@@ -202,7 +199,6 @@ public class Condition{
                                 return false;
                         }
                     } else {
-                        // 字符串比较
                         switch (comparator) {
                             case "==":
                                 return rowValue.equals(value);
@@ -226,6 +222,10 @@ public class Condition{
 
     private static void combineConditions(Stack<String> operatorStack, Stack<Condition> conditionStack) {
         if (conditionStack.size() < 2) {
+            if (operatorStack.peek().equals("(")) {
+                System.out.println(" [DEBUG] Ignoring '(' in operator stack.");
+                return;
+            }
             System.out.println("Insufficient conditions to combine. Stack size:" + conditionStack.size());
             return;
         }
@@ -246,4 +246,66 @@ public class Condition{
         );
         return precedence.getOrDefault(op1, 0) >= precedence.getOrDefault(op2, 0);
     }
+
+
+//    private static boolean isValidCondition(ArrayList<String> tokens) {
+//        int numOfLeftParenthesis = 0;
+//        int numOfRightParenthesis = 0;
+//        for(String token:tokens){
+//            if(token.equals("(")){
+//                numOfLeftParenthesis++;
+//            }
+//            else if(token.equals(")")){
+//                numOfRightParenthesis++;
+//            }
+//        }
+//        if(numOfLeftParenthesis != numOfRightParenthesis){
+//            return false;
+//        }
+////        for(String token:tokens) {
+////            if (!NodeCheck.isPlainText(token) && !token.equals("(") && !token.equals(")")
+////                    && !NodeCheck.isValue(token) && !NodeCheck.isComparator(token)) {
+////                return false;
+////            }
+////        }
+//        return true;
+//    }
+
+    public static boolean isValidCondition(ArrayList<String> tokens) {
+        int numOfLeftParenthesis = 0;
+        int numOfRightParenthesis = 0;
+        for(String token:tokens){
+            if(token.equals("(")){
+                numOfLeftParenthesis++;
+            }
+            else if(token.equals(")")){
+                numOfRightParenthesis++;
+            }
+        }
+        if(numOfLeftParenthesis != numOfRightParenthesis){
+            return false;
+        }
+        for (int i = 0; i < tokens.size(); i++) {
+            String token = tokens.get(i);
+            if (NodeCheck.isComparator(token)) {
+                if (i + 1 >= tokens.size()) return false;
+
+                String literalString = tokens.get(i+1);
+
+                if (NodeCheck.isIntegerLiteral(literalString) || NodeCheck.isFloatLiteral(literalString) ||
+                        NodeCheck.isBooleanLiteral(literalString) || literalString.equalsIgnoreCase("NULL")) {
+                    continue;
+                }
+                if (literalString.length() < 2 ||
+                        literalString.charAt(0) != '\'' ||
+                        literalString.charAt(literalString.length() - 1) != '\'') {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }
+
+
+

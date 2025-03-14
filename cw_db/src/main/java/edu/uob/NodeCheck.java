@@ -34,8 +34,12 @@ public class NodeCheck {
 
     public static boolean isComparator(String token) {
         String[] comparators = {"==", ">", "<", ">=", "<=", "!=", "LIKE"};
-        for(String comparator : comparators) {
-            if(token.equals(comparator)){
+        for (String comparator : comparators) {
+            if (comparator.equals("LIKE")) {
+                if (token.equalsIgnoreCase("LIKE")) {
+                    return true;
+                }
+            } else if (token.equals(comparator)) {
                 return true;
             }
         }
@@ -151,9 +155,5 @@ public class NodeCheck {
         return false;
     }
 
-//    public static ArrayList<String> conditionTokeniser(ArrayList<String> tokens){
-//        String tokensString = tokens.toString();
-//
-//    }
 
 }

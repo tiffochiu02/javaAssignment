@@ -315,7 +315,7 @@ public class QueryParser {
         }
         deleteDatabaseFile.delete();
         if (deleteDatabaseFile.exists()) {
-            return "[ERROR] Database " + databaseName + " not found";
+            return "[ERROR] Database " + databaseName + " not deleted";
         }
         return "[OK] Database " + databaseName + " deleted";
     }

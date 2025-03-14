@@ -33,7 +33,7 @@ public class Table{
         }
         return names;
     }
-//    public void setColumnNames(ArrayList<String> newColumnNames) {
+    //    public void setColumnNames(ArrayList<String> newColumnNames) {
 //        ArrayList<String> oldColumnNames = this.getColumnNames();
 //        for (int i = 0; i < newColumnNames.size(); i++) {
 //            col.setColumnName();

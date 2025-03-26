@@ -31,7 +31,7 @@ public final class GameServer {
         File entitiesFile = Paths.get("config" + File.separator + "basic-entities.dot").toAbsolutePath().toFile();
         File actionsFile = Paths.get("config" + File.separator + "basic-actions.xml").toAbsolutePath().toFile();
         GameServer server = new GameServer(entitiesFile, actionsFile);
-        server.blockingListenOn(8888);
+        server.blockingListenOn(8890);
     }
 
     /**

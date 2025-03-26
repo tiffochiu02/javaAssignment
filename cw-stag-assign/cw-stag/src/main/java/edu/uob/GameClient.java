@@ -51,7 +51,7 @@ public final class GameClient {
         }
         // "username: command"
         String messageToSend = String.format("%s: %s", parts[0], parts[1]);
-        try (var socket = new Socket("localhost", 8888);
+        try (var socket = new Socket("localhost", 8890);
              BufferedReader socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              BufferedWriter socketWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
             socketWriter.write(messageToSend + "\n");

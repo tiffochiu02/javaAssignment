@@ -10,15 +10,39 @@ public class GameCommandsHandling {
     }
 
     public static String allCommandsHandling(LinkedList<String> tokens, GameEngine gameEngine) {
-        if(tokens.isEmpty()) {return "No actions found.";}
+        if(!onlyOneTrigger(tokens, gameEngine)) {return "Invalid actions number.";}
         String builtInResult = builtInCommandHandling(tokens,gameEngine);
-        String customResult = customCommandHandling(tokens,gameEngine);
         if(builtInResult != null){
             return builtInResult;
-        } else if(customResult != null){
-            return customResult;
+        } else {
+            String customResult = customCommandHandling(tokens,gameEngine);
+            if(customResult != null) {
+                return customResult;
+            }
         }
         return "No valid action detected.";
+    }
+
+    public static boolean onlyOneTrigger(LinkedList<String> tokens, GameEngine gameEngine) {
+        Set<String> cmds = new HashSet<String>();
+        cmds.add("inventory");
+        cmds.add("inv");
+        cmds.add("get");
+        cmds.add("drop");
+        cmds.add("goto");
+        cmds.add("look");
+        for(int i = 0; i < gameEngine.getGameActions().size(); i++) {
+            GameAction currentAction = gameEngine.getGameActions().get(i);
+            cmds.addAll(currentAction.getTriggers().values());
+        }
+        int cmdCounts = 0;
+        for (String token: tokens) {
+            if (token == null) {continue; }
+            if(cmds.contains(token.toLowerCase())) {
+                cmdCounts++;
+            }
+        }
+        return cmdCounts == 1;
     }
 
     public static String builtInCommandHandling(LinkedList<String> tokens, GameEngine gameEngine) {
@@ -230,7 +254,7 @@ public class GameCommandsHandling {
                 }
             }
         }
-        if(consumedEntity(gameEngine) && subjectTriggered){
+        if(subjectTriggered && consumedEntity(gameEngine)){
             return currentAction.getNarration();
         }
         return null;
@@ -241,8 +265,14 @@ public class GameCommandsHandling {
             String produced = currentAction.getProduced().get(key);
             for(Map.Entry<Integer,Location> producedLocation: gameEngine.getLocations().entrySet()){
                 if(producedLocation.getValue().getName().equalsIgnoreCase(produced)) {
+                    for(Map.Entry<Integer,Location> producedLocation2: gameEngine.getLocations().entrySet()) {
+                        System.out.println(producedLocation2.getValue().getPaths());
+                    }
+                    System.out.println("----");
                     getCurrentLocation(gameEngine).addPath(produced);
-
+                    for(Map.Entry<Integer,Location> producedLocation2: gameEngine.getLocations().entrySet()) {
+                        System.out.println(producedLocation2.getValue().getPaths());
+                    }
                     break;
                 }
             }
@@ -397,6 +427,12 @@ public class GameCommandsHandling {
                         break;
                     }
                 }
+                if (triggerMatched) {
+                    break;
+                }
+            }
+            if (triggerMatched) {
+                break;
             }
         }
         allSubjectMatched = checkAllSubjectMatched(tokens,currentAction,gameEngine);

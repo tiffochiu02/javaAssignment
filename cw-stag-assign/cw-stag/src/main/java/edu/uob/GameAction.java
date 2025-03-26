@@ -30,7 +30,7 @@ public class GameAction {
         this.consumed.put(key,value);
     }
     public void addProduced(int key, String value){
-        this.produced.put(key,value);
+        this.getProduced().put(key,value);
     }
     public HashMap<Integer,String> getTriggers(){
         return this.triggers;

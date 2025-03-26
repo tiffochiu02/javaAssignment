@@ -24,10 +24,7 @@ public final class GameServer {
     private static EntityFileReader newEntitiesHandler;
     private static HashMap<Integer, Location> newLocations;
     private static LinkedList<GameAction> newGameActions;
-
-
-
-    //GameModel model = new GameModel();
+    private GameEngine engine;
 
 
     public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException {
@@ -51,11 +48,11 @@ public final class GameServer {
         this.newEntitiesHandler = new EntityFileReader();
         this.newActionHandler.ActionsHandling(actionsFile);
         this.newEntitiesHandler.EntityHandling(entitiesFile);
-
         this.newLocations = this.newEntitiesHandler.getLocations();
         this.newGameActions = this.newActionHandler.getActions();
-//        engine.setGameActions(this.newGameActions);
-//        engine.setLocations(this.newLocations);
+        this.engine = new GameEngine();
+        engine.setGameActions(this.newGameActions);
+        engine.setLocations(this.newLocations);
         //this.players = new HashMap<>();
 
     }
@@ -68,7 +65,7 @@ public final class GameServer {
     */
     public String handleCommand(String command) {
         // TODO implement your server logic here
-        GameEngine engine = new GameEngine();
+        //GameEngine engine = new GameEngine();
         String playerName = "";
         String query = "";
         for(int i = 0; i < command.length(); i++) {
@@ -83,40 +80,45 @@ public final class GameServer {
         if(query.isEmpty()){
             return "No action found.";
         }
-        setCurrentPlayer(playerName,engine);
-        engine.setGameActions(this.newGameActions);
-        engine.setLocations(this.newLocations);
-        engine.getCurrentPlayer().setCurrentLocation(engine.getLocations().get(0));
+        System.out.println("Player name = " + playerName);
+        setCurrentPlayer(playerName);
+//        this.engine.setGameActions(this.newGameActions);
+//        this.engine.setLocations(this.newLocations);
 
         LinkedList<String> parsedQuery = Tokenizer.setup(query);
         GameCommandsHandling parser = new GameCommandsHandling();
-        return parser.allCommandsHandling(parsedQuery,engine);
+        return parser.allCommandsHandling(parsedQuery,this.engine);
     }
-    public boolean checkUniquePlayers(String newPlayerName, GameEngine engine) {
-        for(Map.Entry<Integer, Player> player: engine.getPlayers().entrySet()) {
+    public boolean checkUniquePlayers(String newPlayerName) {
+        System.out.println("engine.getPlayers()" + this.engine.getPlayers().size());
+        for(Map.Entry<Integer, Player> player: this.engine.getPlayers().entrySet()) {
+            System.out.println("newPlayerName" + newPlayerName + "playerName: "+ player.getValue().getName());
             if(newPlayerName.equalsIgnoreCase(player.getValue().getName())) {
-                return false;
+                return false; //the player already exists
             }
         }
         return true;
     }
-    public void setCurrentPlayer(String name, GameEngine engine) {
-        if(name == null || name.isEmpty() || engine == null) {
+
+    public void setCurrentPlayer(String name) {
+        if(name == null || name.isEmpty() || this.engine == null) {
             return;
         }
-        if(!checkUniquePlayers(name,engine)){
-           for(Map.Entry<Integer, Player> player: engine.getPlayers().entrySet()) {
+        if(!checkUniquePlayers(name)){
+           for(Map.Entry<Integer, Player> player: this.engine.getPlayers().entrySet()) {
                if(name.equalsIgnoreCase(player.getValue().getName())) {
-                   engine.setCurrentPlayer(player.getValue());
+                   System.out.println("Player already exists. Not unique player");
+                   this.engine.setCurrentPlayer(player.getValue());
                    return;
                }
            }
-           Player currentPlayer = new Player(name,engine);
-           engine.addPlayer(currentPlayer);
-           engine.setCurrentPlayer(currentPlayer);
         }
+        System.out.println("Unique player");
+        Player currentPlayer = new Player(name,this.engine);
+        currentPlayer.setCurrentLocation(this.engine.getLocations().get(0));
+        this.engine.addPlayer(currentPlayer);
+        this.engine.setCurrentPlayer(currentPlayer);
     }
-
 
 
     /**

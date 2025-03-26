@@ -64,7 +64,7 @@ public class EntityFileReader {
                 String from = fromLocation.getId().getId();
                 String to = toLocation.getId().getId();
                 if(entry.getValue().getName().equals(from)){
-                    entry.getValue().addPath(i,to);
+                    entry.getValue().addPath(to);
                 }
             }
         }

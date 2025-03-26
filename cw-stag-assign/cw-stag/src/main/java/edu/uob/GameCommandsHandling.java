@@ -1,8 +1,6 @@
 package edu.uob;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 public class GameCommandsHandling {
 
@@ -13,89 +11,178 @@ public class GameCommandsHandling {
 
     public static String allCommandsHandling(LinkedList<String> tokens, GameEngine gameEngine) {
         if(tokens.isEmpty()) {return "No actions found.";}
-        if(builtInCommandHandling(tokens,gameEngine) != null){
-            return builtInCommandHandling(tokens,gameEngine);
-        } else if(customCommandHandling(tokens,gameEngine) != null){
-            return customCommandHandling(tokens,gameEngine);
-        } else {
-            return "No valid action detected.";
+        String builtInResult = builtInCommandHandling(tokens,gameEngine);
+        String customResult = customCommandHandling(tokens,gameEngine);
+        if(builtInResult != null){
+            return builtInResult;
+        } else if(customResult != null){
+            return customResult;
         }
+        return "No valid action detected.";
     }
 
     public static String builtInCommandHandling(LinkedList<String> tokens, GameEngine gameEngine) {
-        System.out.println("Entered builtInCommandHandling!!!!");
-        for (String token : tokens) {
-            if(token.equalsIgnoreCase("inventory") || token.equalsIgnoreCase("inv")) {
-                return gameEngine.getCurrentPlayer().listArtefacts();
-            }
-            else if(token.equalsIgnoreCase("get")) {
-                return getArtefact(tokens,gameEngine);
-            }
-            else if(token.equalsIgnoreCase("drop")) {
-                return dropArtefact(tokens,gameEngine);
-            }
-            else if(token.equalsIgnoreCase("goto")) {
-                return gotoLocation(tokens,gameEngine);
-            }
-            else if(token.equalsIgnoreCase("look")) {
-                return lookLocation(tokens,gameEngine);
+        System.out.println("current player name is: " + gameEngine.getCurrentPlayer().getName());
+        System.out.println("current location is: " + gameEngine.getCurrentPlayer().getCurrentLocation().getName());
+
+        Set<String> basicCommands = new HashSet<String>();
+        basicCommands.add("inventory");
+        basicCommands.add("inv");
+        basicCommands.add("get");
+        basicCommands.add("drop");
+        basicCommands.add("goto");
+        basicCommands.add("look");
+
+        String command = null;
+        Iterator<String> iterator = tokens.iterator();
+        while(iterator.hasNext()) {
+            String token = iterator.next();
+            if (token == null) {continue; }
+            if(basicCommands.contains(token.toLowerCase())) {
+                command = token.toLowerCase();
+                iterator.remove();
+                break;
             }
         }
-        return null;
+        if(command == null) {
+            return null;
+        }
+
+        switch(command) {
+            case "inventory":
+                return gameEngine.getCurrentPlayer().listArtefacts();
+            case "inv":
+                return gameEngine.getCurrentPlayer().listArtefacts();
+            case "get":
+                return getArtefact(tokens, gameEngine);
+            case "drop":
+                return dropArtefact(tokens, gameEngine);
+            case "goto":
+                return gotoLocation(tokens, gameEngine);
+            case "look":
+                return lookLocation(tokens, gameEngine);
+            default:
+                return "Unknown command";
+        }
+
     }
 
-    public static String getArtefact(LinkedList<String> tokens,GameEngine gameEngine) {
+    //    public static String getArtefact(LinkedList<String> tokens,GameEngine gameEngine) {
+//        System.out.println("Entered getArtefact!!!!");
+//        Location currentLocation = getCurrentLocation(gameEngine);
+//        Player currentPlayer = gameEngine.getCurrentPlayer();
+//        boolean found = false;
+//        String artefactName = "";
+//        for (String token : tokens) {
+//            System.out.println("Entered for loop of tokens");
+//            boolean matchedArtefactFound = false;
+//            Iterator<Map.Entry<Integer, Artefact>> iterator = currentLocation.getArtefacts().entrySet().iterator();
+//            while (iterator.hasNext()) {
+//                Map.Entry<Integer, Artefact> entry = iterator.next();
+//                if (token.equalsIgnoreCase(entry.getValue().getName())) {
+//                    System.out.println("Matched Artefact found!!!");
+//                    artefactName = entry.getValue().getName();
+//                    Artefact newArtefact = entry.getValue();
+//                    currentPlayer.retrieveArtefact(newArtefact);
+//                    iterator.remove();
+//                    matchedArtefactFound = true;
+//                    break;
+//                }
+//            }if(matchedArtefactFound){
+//                found = true;
+//                break;
+//            }
+//        }
+//        if(!found) {
+//            return "Artefact not found";
+//        }
+//
+//        StringBuilder sMessage = new StringBuilder();
+//        return sMessage.append("Added Artefact: ").append(artefactName).append(" to the inventory.").toString();
+//    }
+    public static String getArtefact(LinkedList<String> tokens, GameEngine gameEngine) {
+        Location currentLocation = getCurrentLocation(gameEngine);
+        Player currentPlayer = gameEngine.getCurrentPlayer();
+        boolean found = false;
+        String artefactName = "";
+
         for (String token : tokens) {
-            for(int i = 0; i < getCurrentLocation(gameEngine).getArtefacts().size(); i++) {
-                String artefactName = getCurrentLocation(gameEngine).getArtefacts().get(i).getName();
-                if(token.equalsIgnoreCase(artefactName)) {
-                    Artefact retrievedArtefact = getCurrentLocation(gameEngine).getArtefacts().get(i);
-                    gameEngine.getCurrentPlayer().retrieveArtefact(retrievedArtefact);
-                    getCurrentLocation(gameEngine).getArtefacts().remove(i);
-                    StringBuilder sMessage = new StringBuilder();
-                    return sMessage.append("Added Artefact: ").append(token).append(" to the inventory.").toString();
+            System.out.println("Processing token: '" + token + "'");
+            boolean matchedArtefactFound = false;
+            Iterator<Map.Entry<Integer, Artefact>> iterator = currentLocation.getArtefacts().entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<Integer, Artefact> entry = iterator.next();
+                System.out.println("Comparing token: '" + token + "' with artefact name: '"
+                        + entry.getValue().getName() + "'");
+                if (token.equalsIgnoreCase(entry.getValue().getName())) {
+                    System.out.println("Matched Artefact found!!!");
+                    artefactName = entry.getValue().getName();
+                    currentPlayer.retrieveArtefact(entry.getValue());
+                    iterator.remove();
+                    matchedArtefactFound = true;
+                    break;
                 }
             }
+            System.out.println("Token: '" + token + "' matched? " + matchedArtefactFound);
+            if (matchedArtefactFound) {
+                found = true;
+                break;
+            }
         }
-        StringBuilder fMessage = new StringBuilder();
-        return fMessage.append("No artefact ").append(" found.").toString();
+
+        System.out.println("Final flag - found: " + found + ", artefactName: '" + artefactName + "'");
+        if (!found) {
+            return "Artefact not found";
+        }
+
+        return "Added Artefact: " + artefactName + " to the inventory.";
     }
+
     public static String dropArtefact(LinkedList<String> tokens, GameEngine gameEngine) {
+        String artefactName = "";
+        boolean artefactFound = false;
         for (String token : tokens) {
-            for(int i = 0; i < gameEngine.getPlayers().get(0).getInventory().size(); i++) {
-                String artefactName = gameEngine.getPlayers().get(0).getInventory().get(i).getName();
-                if(token.equalsIgnoreCase(artefactName)){
-                    Artefact droppedArtefact = gameEngine.getPlayers().get(0).getInventory().get(i);
-                    gameEngine.getCurrentPlayer().removeArtefact(droppedArtefact);
+//            for(int i = 0; i < gameEngine.getCurrentPlayer().getInventory().size(); i++) {
+//                String artefactName = gameEngine.getCurrentPlayer().getInventory().get(i).getName();
+            for(Map.Entry<Integer,Artefact> entry: gameEngine.getCurrentPlayer().getInventory().entrySet()){
+                artefactName = entry.getValue().getName();
+                if(token.equalsIgnoreCase(artefactName)) {
+                    Artefact droppedArtefact = entry.getValue();
+                    //gameEngine.getCurrentPlayer().removeArtefact(droppedArtefact);
                     getCurrentLocation(gameEngine).getArtefacts().put(getCurrentLocation(gameEngine).getArtefacts().size(), droppedArtefact);
-                    StringBuilder sMessage = new StringBuilder();
-                    return sMessage.append("Dropped Artefact: ").append(token).append(" from the inventory.").toString();
+                    artefactFound = true;
+                    break;
                 }
             }
+
         }
-        StringBuilder fMessage = new StringBuilder();
-        return fMessage.append("No artefact ").append(" found.").toString();
+        gameEngine.getCurrentPlayer().removeArtefact(artefactName);
+        if(!artefactFound) {
+            StringBuilder fMessage = new StringBuilder();
+            return fMessage.append("No artefact ").append(" found.").toString();
+        }
+        StringBuilder sMessage = new StringBuilder();
+        return sMessage.append("Dropped Artefact: ").append(artefactName).append(" from the inventory.").toString();
     }
 
     public static String gotoLocation(LinkedList<String> tokens, GameEngine gameEngine) {
         String newLocationName = "";
         for (String token : tokens) {
-           int numOfPaths = getCurrentLocation(gameEngine).getPaths().size();
-           for(int i = 0; i < numOfPaths; i++) {
-               if(token.equalsIgnoreCase(getCurrentLocation(gameEngine).getPaths().get(i))) {
-                   newLocationName = getCurrentLocation(gameEngine).getPaths().get(i);
-               }
-           }
+            for(Map.Entry<Integer,String> path: getCurrentLocation(gameEngine).getPaths().entrySet()){
+                if(token.equalsIgnoreCase(path.getValue())) {
+                    newLocationName = path.getValue();
+                }
+            }
         }
-        for(int i = 0; i < gameEngine.getLocations().size(); i++) {
-            if(newLocationName.equalsIgnoreCase(gameEngine.getLocations().get(i).getName())) {
-                gameEngine.getCurrentPlayer().setCurrentLocation(gameEngine.getLocations().get(i));
+        for(Map.Entry<Integer,Location> entry: gameEngine.getLocations().entrySet()){
+            if(newLocationName.equalsIgnoreCase(entry.getValue().getName())) {
+                gameEngine.getCurrentPlayer().setCurrentLocation(entry.getValue());
                 StringBuilder sMessage = new StringBuilder();
                 return sMessage.append("Arrived at location: ").append(newLocationName).append(".").toString();
             }
         }
         StringBuilder fMessage = new StringBuilder();
-        return fMessage.append("No location ").append(" found.").toString();
+        return fMessage.append("No location ").append(newLocationName).append(" found.").toString();
     }
 
     //look prints details of the current location (including all entities present) and lists the paths to other locations
@@ -107,19 +194,24 @@ public class GameCommandsHandling {
         String allPaths = getCurrentLocation(gameEngine).getPaths().toString();
         StringBuilder otherPresentPlayers = new StringBuilder();
         for(Map.Entry<Integer,Player> entry: gameEngine.getPlayers().entrySet()){
+            if(entry.getValue().getName().equalsIgnoreCase(gameEngine.getCurrentPlayer().getName())){
+                continue;
+            }
             if(entry.getValue().getCurrentLocation().getName().equalsIgnoreCase(currentLocationName)){
                 otherPresentPlayers.append(entry.getValue().getName()).append(", ");
             }
         }
         //delete the final comma
-        otherPresentPlayers.deleteCharAt(otherPresentPlayers.length()-2);
+
         StringBuilder sb = new StringBuilder();
 
         sb.append("You are at ").append(currentLocationName).append(": ").append(currentLocationDescription).append("\n");
         sb.append("Artefacts: ").append(allArtefacts).append("\n");
         sb.append("Furniture: ").append(allFurniture).append("\n");
         sb.append("Paths: ").append(allPaths).append("\n");
-        sb.append("Other players in your location: ").append(otherPresentPlayers).append("\n");
+        if(!otherPresentPlayers.isEmpty()) {
+            sb.append("Other players in your location: ").append(otherPresentPlayers).append("\n");
+        }
         return sb.toString();
     }
 
@@ -129,18 +221,96 @@ public class GameCommandsHandling {
         if(currentAction == null){
             return "No action detected.";
         }
-        if(consumedEntity(gameEngine)){
+        boolean subjectTriggered = false;
+        for(String token : tokens) {
+            for(Map.Entry<Integer, String> entry: currentAction.getSubjects().entrySet()){
+                if(token.equalsIgnoreCase(entry.getValue())) {
+                    subjectTriggered = true;
+                    break;
+                }
+            }
+        }
+        if(consumedEntity(gameEngine) && subjectTriggered){
             return currentAction.getNarration();
         }
         return null;
     }
 
+    public static void produceEntity(GameAction currentAction, GameEngine gameEngine, Location storeroom) {
+        for(Integer key: currentAction.getProduced().keySet()) {
+            String produced = currentAction.getProduced().get(key);
+            for(Map.Entry<Integer,Location> producedLocation: gameEngine.getLocations().entrySet()){
+                if(producedLocation.getValue().getName().equalsIgnoreCase(produced)) {
+                    getCurrentLocation(gameEngine).addPath(produced);
+
+                    break;
+                }
+            }
+
+            Iterator<Map.Entry<Integer,Artefact>> iterator = storeroom.getArtefacts().entrySet().iterator();
+            while(iterator.hasNext()){
+                Map.Entry<Integer,Artefact> entry = iterator.next();
+                Artefact artefact = entry.getValue();
+                if(produced.equalsIgnoreCase(artefact.getName())) {
+                    iterator.remove();
+                    getCurrentLocation(gameEngine).addArtefact(artefact);
+                    break;
+                }
+            }
+
+            Iterator<Map.Entry<Integer, Furniture>> furnitureIterator = storeroom.getFurniture().entrySet().iterator();
+            while (furnitureIterator.hasNext()) {
+                Map.Entry<Integer, Furniture> entry = furnitureIterator.next();
+                Furniture furniture = entry.getValue();
+                if (produced.equalsIgnoreCase(furniture.getName())) {
+                    furnitureIterator.remove();
+                    getCurrentLocation(gameEngine).addFurniture(furniture);
+                    break;
+                }
+            }
+
+            Iterator<Map.Entry<Integer, Character>> characterIterator = storeroom.getCharacters().entrySet().iterator();
+            while (characterIterator.hasNext()) {
+                Map.Entry<Integer, Character> entry = characterIterator.next();
+                Character character = entry.getValue();
+                if (produced.equalsIgnoreCase(character.getName())) {
+                    characterIterator.remove();
+                    getCurrentLocation(gameEngine).addCharacter(character);
+                    break;
+                }
+            }
+
+//            for(Map.Entry<Integer,Artefact> artefact: storeroom.getArtefacts().entrySet()){
+//                if(artefact.getValue().getName().equalsIgnoreCase(produced)) {
+//                    System.out.println("Entered produce entity - getArtefact: " + artefact.getValue().getName());
+//                    getCurrentLocation(gameEngine).addArtefact(artefact.getValue());
+//                    break;
+//                }
+//            }
+//            for(Map.Entry<Integer,Furniture> furniture: storeroom.getFurniture().entrySet()){
+//                if(furniture.getValue().getName().equalsIgnoreCase(produced)) {
+//                    getCurrentLocation(gameEngine).addFurniture(furniture.getValue());
+//                    break;
+//                }
+//            }
+//            for(Map.Entry<Integer,Character> character: storeroom.getCharacters().entrySet()){
+//                if(character.getValue().getName().equalsIgnoreCase(produced)) {
+//                    getCurrentLocation(gameEngine).addCharacter(character.getValue());
+//                    break;
+//                }
+//            }
+        }
+    }
+
     public static boolean consumedEntity(GameEngine gameEngine) {
         GameAction currentAction = gameEngine.getCurrentPlayer().getCurrentAction();
         Location storeroom = new Location("","");
-        for(Integer key: gameEngine.getLocations().keySet()){
-            storeroom = gameEngine.getLocations().get(key);
+        for(Map.Entry<Integer,Location> entry: gameEngine.getLocations().entrySet()){
+            if(entry.getValue().getName().equalsIgnoreCase("storeroom")) {
+                storeroom = entry.getValue();
+            }
         }
+        produceEntity(currentAction, gameEngine, storeroom);
         for(Integer key: currentAction.getConsumed().keySet()) {
             String consumed = currentAction.getConsumed().get(key);
             Artefact consumedInvArtefact = consumeInventory(consumed,gameEngine);
@@ -222,14 +392,16 @@ public class GameCommandsHandling {
             for(int j = 0; j < currentAction.getTriggers().size(); j++){
                 for (String token : tokens) {
                     if(token.equalsIgnoreCase(currentAction.getTriggers().get(j))) {
-                       triggerMatched = true;
+                        //if a valid trigger phrase is found, then break
+                        triggerMatched = true;
+                        break;
                     }
                 }
             }
         }
         allSubjectMatched = checkAllSubjectMatched(tokens,currentAction,gameEngine);
         if(triggerMatched && allSubjectMatched) {
-           gameEngine.getCurrentPlayer().setCurrentAction(currentAction);
+            gameEngine.getCurrentPlayer().setCurrentAction(currentAction);
         }
     }
 
@@ -240,30 +412,35 @@ public class GameCommandsHandling {
         for(int m = 0; m < currentDetectedAction.getSubjects().size(); m++) {
             String subjectName = currentDetectedAction.getSubjects().get(m);
             boolean subjectMatched = false;
-            for(int k = 0; k < getCurrentLocation(gameEngine).getArtefacts().size(); k++) {
-                String artefactName = getCurrentLocation(gameEngine).getArtefacts().get(k).getName();
+            for(Map.Entry<Integer,Artefact> entry: getCurrentLocation(gameEngine).getArtefacts().entrySet()) {
+                String artefactName = entry.getValue().getName();
                 if(subjectName.equalsIgnoreCase(artefactName)) {
                     subjectMatched = true;
+                    break;
                 }
             }
-            for(int k = 0; k < getCurrentLocation(gameEngine).getFurniture().size(); k++) {
-                String furnitureName = getCurrentLocation(gameEngine).getFurniture().get(k).getName();
-                if(subjectName.equalsIgnoreCase(furnitureName)) {
-                    subjectMatched = true;
-                }
-            }
-            for(int k = 0; k < gameEngine.getCurrentPlayer().getInventory().size(); k++) {
-                String assetName = gameEngine.getCurrentPlayer().getInventory().get(k).getName();
-                if(subjectName.equalsIgnoreCase(assetName)) {
-                    subjectMatched = true;
-                }
-            }
-            for(int k = 0; k < getCurrentLocation(gameEngine).getCharacters().size(); k++) {
-                String characterName = getCurrentLocation(gameEngine).getCharacters().get(k).getName();
+            for(Map.Entry<Integer,Character> entry: getCurrentLocation(gameEngine).getCharacters().entrySet()) {
+                String characterName = entry.getValue().getName();
                 if(subjectName.equalsIgnoreCase(characterName)) {
                     subjectMatched = true;
+                    break;
                 }
-            }if(!subjectMatched){return false; }
+            }
+            for(Map.Entry<Integer,Furniture> entry: getCurrentLocation(gameEngine).getFurniture().entrySet()) {
+                String furnitureName = entry.getValue().getName();
+                if(subjectName.equalsIgnoreCase(furnitureName)) {
+                    subjectMatched = true;
+                    break;
+                }
+            }
+            for(Map.Entry<Integer,Artefact> entry: gameEngine.getCurrentPlayer().getInventory().entrySet()) {
+                String artefactName = entry.getValue().getName();
+                if(subjectName.equalsIgnoreCase(artefactName)) {
+                    subjectMatched = true;
+                    break;
+                }
+            }
+            if(!subjectMatched){return false; }
             allMatched = true;
         }
         return allMatched;

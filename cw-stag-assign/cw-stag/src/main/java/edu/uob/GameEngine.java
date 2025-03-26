@@ -17,7 +17,7 @@ public class GameEngine {
         this.players = new HashMap<>();
 //        this.newActions = new ActionsFileReader();
 //        this.newEntities = new EntityFileReader();
-        this.currentPlayer = new Player("simon",this);
+        //this.currentPlayer = getCurrentPlayer();
         this.locations = new HashMap<>();
         this.gameActions = new LinkedList<>();
     }
@@ -63,7 +63,7 @@ public class GameEngine {
                maxIndex = entry.getKey();
            }
        }
-       this.players.put(maxIndex + 1,player);
+       this.getPlayers().put(maxIndex + 1,player);
     }
 
 }

@@ -112,4 +112,44 @@ public class Location extends GameEntity{
         //names.deleteCharAt(names.length()-1);
         return names.toString();
     }
+
+    public String listAllArtefactsDescription(){
+        StringBuilder description = new StringBuilder();
+        for(Map.Entry<Integer,Artefact> entry : this.getArtefacts().entrySet()){
+            description.append(entry.getValue().getDescription()).append(".\n");
+        }
+        return description.toString();
+    }
+
+    public String listAllFurnitureDescription(){
+        StringBuilder description = new StringBuilder();
+        for(Map.Entry<Integer,Furniture> entry : this.getFurniture().entrySet()){
+            description.append(entry.getValue().getDescription()).append(".\n");
+        }
+        return description.toString();
+    }
+
+    public String listAllCharactersDescription(){
+        StringBuilder description = new StringBuilder();
+        for(Map.Entry<Integer,Character> entry : this.getCharacters().entrySet()){
+            description.append(entry.getValue().getDescription()).append(", ");
+        }
+        String allChar = description.toString();
+        if(allChar.contains(",")){
+            allChar = allChar.substring(0,allChar.lastIndexOf(","));
+        }
+        return allChar;
+    }
+
+    public String listAllPaths(){
+        StringBuilder paths = new StringBuilder();
+        for(Map.Entry<Integer,String> entry : this.getPaths().entrySet()){
+            paths.append(entry.getValue()).append(", ");
+        }
+        String allPaths = paths.toString();
+        if(allPaths.contains(",")){
+           allPaths = allPaths.substring(0, allPaths.lastIndexOf(","));
+        }
+        return allPaths;
+    }
 }

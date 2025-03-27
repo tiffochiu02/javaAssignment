@@ -87,6 +87,8 @@ public class GameCommandsHandling {
                 return gotoLocation(tokens, gameEngine);
             case "look":
                 return lookLocation(tokens, gameEngine);
+            case "health":
+                return checkHealth(tokens,gameEngine);
             default:
                 return "Unknown command";
         }
@@ -126,6 +128,13 @@ public class GameCommandsHandling {
 //        StringBuilder sMessage = new StringBuilder();
 //        return sMessage.append("Added Artefact: ").append(artefactName).append(" to the inventory.").toString();
 //    }
+    public static String checkHealth(LinkedList<String> tokens, GameEngine gameEngine) {
+        Player currentPlayer = gameEngine.getCurrentPlayer();
+        int healthLevels = currentPlayer.getHealthLevels();
+        StringBuilder healthMessage = new StringBuilder();
+        healthMessage.append("Your current health level is: ").append(healthLevels).append("\n");
+        return healthMessage.toString();
+    }
     public static String getArtefact(LinkedList<String> tokens, GameEngine gameEngine) {
         Location currentLocation = getCurrentLocation(gameEngine);
         Player currentPlayer = gameEngine.getCurrentPlayer();

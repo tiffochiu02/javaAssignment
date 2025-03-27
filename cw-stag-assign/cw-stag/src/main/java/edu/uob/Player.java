@@ -12,12 +12,14 @@ public class Player {
     private HashMap<Integer,Artefact> inventory;
     private Location currentLocation;
     private GameAction currentAction;
+    private int healthLevels;
 
     public Player(String name, GameEngine engine) {
         this.name = name;
         this.inventory = new HashMap<>();
         this.currentLocation = engine.getLocations().get(0);
         this.currentAction = getCurrentAction();
+        this.healthLevels = 3;
     }
 
     public String getName() {
@@ -72,4 +74,22 @@ public class Player {
     public GameAction getCurrentAction(){
         return this.currentAction;
     }
+    public int getHealthLevels(){
+        return this.healthLevels;
+    }
+    public void resetHealthLevels(){
+        this.healthLevels = 3;
+    }
+    public void addHealth(){
+        if(this.getHealthLevels() < 3){
+            this.healthLevels += 1;
+        }
+    }
+    public void loseHealth(){
+        this.healthLevels -= 1;
+        if(this.healthLevels == 0){
+            getInventory().entrySet().removeAll(this.getInventory().entrySet());
+        }
+    }
+
 }

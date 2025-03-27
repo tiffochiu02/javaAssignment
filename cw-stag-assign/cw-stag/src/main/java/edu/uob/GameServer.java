@@ -19,50 +19,52 @@ import java.util.Map;
 public final class GameServer {
 
     private static final char END_OF_TRANSMISSION = 4;
-    //private static HashMap<Integer,Player> players;
-    private static ActionsFileReader newActionHandler;
-    private static EntityFileReader newEntitiesHandler;
-    private static HashMap<Integer, Location> newLocations;
-    private static LinkedList<GameAction> newGameActions;
     private GameEngine engine;
 
 
     public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException {
-        File entitiesFile = Paths.get("config" + File.separator + "basic-entities.dot").toAbsolutePath().toFile();
-        File actionsFile = Paths.get("config" + File.separator + "basic-actions.xml").toAbsolutePath().toFile();
+        File entitiesFile = Paths.get("config" + File.separator + "extended-entities.dot").toAbsolutePath().toFile();
+        File actionsFile = Paths.get("config" + File.separator + "extended-actions.xml").toAbsolutePath().toFile();
         GameServer server = new GameServer(entitiesFile, actionsFile);
-        server.blockingListenOn(8890);
+        server.blockingListenOn(8888);
     }
 
     /**
-    * Do not change the following method signature or we won't be able to mark your submission
-    * Instanciates a new server instance, specifying a game with some configuration files
-    *
-    * @param entitiesFile The game configuration file containing all game entities to use in your game
-    * @param actionsFile The game configuration file containing all game actions to use in your game
-    */
+     * Do not change the following method signature or we won't be able to mark your submission
+     * Instanciates a new server instance, specifying a game with some configuration files
+     *
+     * @param entitiesFile The game configuration file containing all game entities to use in your game
+     * @param actionsFile The game configuration file containing all game actions to use in your game
+     */
     public GameServer(File entitiesFile, File actionsFile) {
         // TODO implement your server logic here
-        //GameEngine engine = new GameEngine();
-        this.newActionHandler = new ActionsFileReader();
-        this.newEntitiesHandler = new EntityFileReader();
-        this.newActionHandler.ActionsHandling(actionsFile);
-        this.newEntitiesHandler.EntityHandling(entitiesFile);
-        this.newLocations = this.newEntitiesHandler.getLocations();
-        this.newGameActions = this.newActionHandler.getActions();
-        this.engine = new GameEngine();
-        engine.setGameActions(this.newGameActions);
-        engine.setLocations(this.newLocations);
-        //this.players = new HashMap<>();
+
+        try{
+            //GameEngine engine = new GameEngine();
+            //private static HashMap<Integer,Player> players;
+            ActionsFileReader newActionHandler = new ActionsFileReader();
+            EntityFileReader newEntitiesHandler = new EntityFileReader();
+            newActionHandler.ActionsHandling(actionsFile);
+            newEntitiesHandler.EntityHandling(entitiesFile);
+            HashMap<Integer, Location> newLocations = newEntitiesHandler.getLocations();
+            LinkedList<GameAction> newGameActions = newActionHandler.getActions();
+            this.engine = new GameEngine();
+            this.engine.setGameActions(newGameActions);
+            this.engine.setLocations(newLocations);
+            //this.players = new HashMap<>();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
 
     }
 
     /**
-    * Do not change the following method signature or we won't be able to mark your submission
-    * This method handles all incoming game commands and carries out the corresponding actions.</p>
-    *
-    * @param command The incoming command to be processed
-    */
+     * Do not change the following method signature or we won't be able to mark your submission
+     * This method handles all incoming game commands and carries out the corresponding actions.</p>
+     *
+     * @param command The incoming command to be processed
+     */
     public String handleCommand(String command) {
         // TODO implement your server logic here
         //GameEngine engine = new GameEngine();
@@ -88,6 +90,7 @@ public final class GameServer {
         LinkedList<String> parsedQuery = Tokenizer.setup(query);
         GameCommandsHandling parser = new GameCommandsHandling();
         return parser.allCommandsHandling(parsedQuery,this.engine);
+        //return parser.allCommandsHandling(parsedQuery,engine);
     }
     public boolean checkUniquePlayers(String newPlayerName) {
         System.out.println("engine.getPlayers()" + this.engine.getPlayers().size());
@@ -105,13 +108,13 @@ public final class GameServer {
             return;
         }
         if(!checkUniquePlayers(name)){
-           for(Map.Entry<Integer, Player> player: this.engine.getPlayers().entrySet()) {
-               if(name.equalsIgnoreCase(player.getValue().getName())) {
-                   System.out.println("Player already exists. Not unique player");
-                   this.engine.setCurrentPlayer(player.getValue());
-                   return;
-               }
-           }
+            for(Map.Entry<Integer, Player> player: this.engine.getPlayers().entrySet()) {
+                if(name.equalsIgnoreCase(player.getValue().getName())) {
+                    System.out.println("Player already exists. Not unique player");
+                    this.engine.setCurrentPlayer(player.getValue());
+                    return;
+                }
+            }
         }
         System.out.println("Unique player");
         Player currentPlayer = new Player(name,this.engine);
@@ -122,12 +125,12 @@ public final class GameServer {
 
 
     /**
-    * Do not change the following method signature or we won't be able to mark your submission
-    * Starts a *blocking* socket server listening for new connections.
-    *
-    * @param portNumber The port to listen on.
-    * @throws IOException If any IO related operation fails.
-    */
+     * Do not change the following method signature or we won't be able to mark your submission
+     * Starts a *blocking* socket server listening for new connections.
+     *
+     * @param portNumber The port to listen on.
+     * @throws IOException If any IO related operation fails.
+     */
     public void blockingListenOn(int portNumber) throws IOException {
         try (ServerSocket s = new ServerSocket(portNumber)) {
             System.out.println("Server listening on port " + portNumber);
@@ -142,16 +145,16 @@ public final class GameServer {
     }
 
     /**
-    * Do not change the following method signature or we won't be able to mark your submission
-    * Handles an incoming connection from the socket server.
-    *
-    * @param serverSocket The client socket to read/write from.
-    * @throws IOException If any IO related operation fails.
-    */
+     * Do not change the following method signature or we won't be able to mark your submission
+     * Handles an incoming connection from the socket server.
+     *
+     * @param serverSocket The client socket to read/write from.
+     * @throws IOException If any IO related operation fails.
+     */
     private void blockingHandleConnection(ServerSocket serverSocket) throws IOException {
         try (Socket s = serverSocket.accept();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(s.getOutputStream()))) {
+             BufferedReader reader = new BufferedReader(new InputStreamReader(s.getInputStream()));
+             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(s.getOutputStream()))) {
             System.out.println("Connection established");
             String incomingCommand = reader.readLine();
             if(incomingCommand != null) {

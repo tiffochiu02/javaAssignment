@@ -79,6 +79,8 @@ public class Player {
     }
     public void resetHealthLevels(){
         this.healthLevels = 3;
+        getInventory().entrySet().removeAll(this.getInventory().entrySet());
+
     }
     public void addHealth(){
         if(this.getHealthLevels() < 3){
@@ -87,9 +89,6 @@ public class Player {
     }
     public void loseHealth(){
         this.healthLevels -= 1;
-        if(this.healthLevels == 0){
-            getInventory().entrySet().removeAll(this.getInventory().entrySet());
-        }
     }
 
 }

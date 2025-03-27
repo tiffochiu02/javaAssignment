@@ -173,7 +173,7 @@ public class GameCommandsHandling {
                 if(token.equalsIgnoreCase(artefactName)) {
                     Artefact droppedArtefact = entry.getValue();
                     //gameEngine.getCurrentPlayer().removeArtefact(droppedArtefact);
-                    getCurrentLocation(gameEngine).getArtefacts().put(getCurrentLocation(gameEngine).getArtefacts().size(), droppedArtefact);
+                    getCurrentLocation(gameEngine).addArtefact(droppedArtefact);
                     artefactFound = true;
                     break;
                 }
@@ -182,8 +182,7 @@ public class GameCommandsHandling {
         }
         gameEngine.getCurrentPlayer().removeArtefact(artefactName);
         if(!artefactFound) {
-            StringBuilder fMessage = new StringBuilder();
-            return fMessage.append("No artefact ").append(" found.").toString();
+            return "No artefact found.";
         }
         StringBuilder sMessage = new StringBuilder();
         return sMessage.append("Dropped Artefact: ").append(artefactName).append(" from the inventory.").toString();
@@ -213,9 +212,10 @@ public class GameCommandsHandling {
     public static String lookLocation(LinkedList<String> tokens, GameEngine gameEngine) {
         String currentLocationName = getCurrentLocation(gameEngine).getName();
         String currentLocationDescription = getCurrentLocation(gameEngine).getDescription();
-        String allArtefacts = getCurrentLocation(gameEngine).listAllArtefacts();
-        String allFurniture = getCurrentLocation(gameEngine).listAllFurniture();
-        String allPaths = getCurrentLocation(gameEngine).getPaths().toString();
+        String allArtefacts = getCurrentLocation(gameEngine).listAllArtefactsDescription();
+        String allFurniture = getCurrentLocation(gameEngine).listAllFurnitureDescription();
+        String allCharacters = getCurrentLocation(gameEngine).listAllCharactersDescription();
+        String allPaths = getCurrentLocation(gameEngine).listAllPaths();
         StringBuilder otherPresentPlayers = new StringBuilder();
         for(Map.Entry<Integer,Player> entry: gameEngine.getPlayers().entrySet()){
             if(entry.getValue().getName().equalsIgnoreCase(gameEngine.getCurrentPlayer().getName())){
@@ -225,23 +225,30 @@ public class GameCommandsHandling {
                 otherPresentPlayers.append(entry.getValue().getName()).append(", ");
             }
         }
-        //delete the final comma
+        String otherPlayers = otherPresentPlayers.toString();
+        if(otherPlayers.contains(",")){
+            otherPlayers = otherPlayers.substring(0, otherPlayers.lastIndexOf(","));
+        }
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("You are at ").append(currentLocationName).append(": ").append(currentLocationDescription).append("\n");
-        sb.append("Artefacts: ").append(allArtefacts).append("\n");
-        sb.append("Furniture: ").append(allFurniture).append("\n");
-        sb.append("Paths: ").append(allPaths).append("\n");
-        if(!otherPresentPlayers.isEmpty()) {
-            sb.append("Other players in your location: ").append(otherPresentPlayers).append("\n");
+        sb.append("You are at ").append(": ").append(currentLocationDescription).append("\n");
+        sb.append("You can see: ").append(allArtefacts).append(allFurniture);
+        if(!allCharacters.isEmpty()) {
+            sb.append(allCharacters).append(".\n");
+        }
+        sb.append("There is a path to ").append(allPaths).append(".\n");
+
+        if(!otherPlayers.isEmpty()) {
+            sb.append("Other players in your location: ").append(otherPlayers).append(".\n");
         }
         return sb.toString();
     }
 
     public static String customCommandHandling(LinkedList<String> tokens, GameEngine gameEngine) {
         setCurrentAction(tokens,gameEngine);
-        GameAction currentAction = gameEngine.getCurrentPlayer().getCurrentAction();
+        Player currentPlayer = gameEngine.getCurrentPlayer();
+        GameAction currentAction = currentPlayer.getCurrentAction();
         if(currentAction == null){
             return "No action detected.";
         }
@@ -254,10 +261,20 @@ public class GameCommandsHandling {
                 }
             }
         }
+
         if(subjectTriggered && consumedEntity(gameEngine)){
+            if(currentPlayer.getHealthLevels() == 0){
+                playerReset(gameEngine, currentPlayer);
+                return "Oh no! You died and lost everything!";
+            }
             return currentAction.getNarration();
         }
         return null;
+    }
+
+    public static void playerReset(GameEngine gameEngine, Player currentPlayer) {
+        currentPlayer.setCurrentLocation(gameEngine.getLocations().get(0));
+        currentPlayer.resetHealthLevels();
     }
 
     public static void produceEntity(GameAction currentAction, GameEngine gameEngine, Location storeroom) {
@@ -283,6 +300,10 @@ public class GameCommandsHandling {
                 Artefact artefact = entry.getValue();
                 if(produced.equalsIgnoreCase(artefact.getName())) {
                     iterator.remove();
+                    if(produced.equalsIgnoreCase("health")){
+                        gameEngine.getCurrentPlayer().addHealth();
+                        break;
+                    }
                     getCurrentLocation(gameEngine).addArtefact(artefact);
                     break;
                 }
@@ -348,6 +369,10 @@ public class GameCommandsHandling {
             Furniture consumedFurniture = consumeFurniture(consumed,gameEngine);
             Character consumedCharacter = consumeCharacter(consumed,gameEngine);
 
+            if(consumed.equalsIgnoreCase("health")) {
+                gameEngine.getCurrentPlayer().loseHealth();
+                return true;
+            }
             if(consumedArtefact != null) {
                 storeroom.addArtefact(consumedArtefact);
                 return true;

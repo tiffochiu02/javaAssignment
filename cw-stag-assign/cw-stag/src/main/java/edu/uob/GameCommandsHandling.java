@@ -1,5 +1,7 @@
 package edu.uob;
 
+import org.junit.internal.ArrayComparisonFailure;
+
 import java.util.*;
 
 public class GameCommandsHandling {
@@ -274,6 +276,10 @@ public class GameCommandsHandling {
 
     public static void playerReset(GameEngine gameEngine, Player currentPlayer) {
         currentPlayer.setCurrentLocation(gameEngine.getLocations().get(0));
+        for(Map.Entry<Integer, Artefact> entry: currentPlayer.getInventory().entrySet()){
+            Artefact artefact = entry.getValue();
+            getCurrentLocation(gameEngine).addArtefact(artefact);
+        }
         currentPlayer.resetHealthLevels();
     }
 

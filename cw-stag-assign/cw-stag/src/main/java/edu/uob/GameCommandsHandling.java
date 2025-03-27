@@ -1,6 +1,5 @@
 package edu.uob;
 
-import org.junit.internal.ArrayComparisonFailure;
 
 import java.util.*;
 
@@ -58,6 +57,7 @@ public class GameCommandsHandling {
         basicCommands.add("drop");
         basicCommands.add("goto");
         basicCommands.add("look");
+        basicCommands.add("health");
 
         String command = null;
         Iterator<String> iterator = tokens.iterator();
@@ -130,7 +130,7 @@ public class GameCommandsHandling {
 //    }
     public static String checkHealth(LinkedList<String> tokens, GameEngine gameEngine) {
         Player currentPlayer = gameEngine.getCurrentPlayer();
-        int healthLevels = currentPlayer.getHealthLevels();
+        String healthLevels = String.valueOf(currentPlayer.getHealthLevels());
         StringBuilder healthMessage = new StringBuilder();
         healthMessage.append("Your current health level is: ").append(healthLevels).append("\n");
         return healthMessage.toString();
@@ -284,11 +284,11 @@ public class GameCommandsHandling {
     }
 
     public static void playerReset(GameEngine gameEngine, Player currentPlayer) {
-        currentPlayer.setCurrentLocation(gameEngine.getLocations().get(0));
         for(Map.Entry<Integer, Artefact> entry: currentPlayer.getInventory().entrySet()){
             Artefact artefact = entry.getValue();
             getCurrentLocation(gameEngine).addArtefact(artefact);
         }
+        currentPlayer.setCurrentLocation(gameEngine.getLocations().get(0));
         currentPlayer.resetHealthLevels();
     }
 
@@ -522,5 +522,4 @@ public class GameCommandsHandling {
         return allMatched;
     }
 }
-
 

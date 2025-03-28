@@ -11,7 +11,7 @@ public class GameCommandsHandling {
     }
 
     public static String allCommandsHandling(LinkedList<String> tokens, GameEngine gameEngine) {
-        if(!onlyOneTrigger(tokens, gameEngine)) {return "Invalid actions number.";}
+        if(!onlyOneTrigger(tokens, gameEngine) || !onlyOneEntity(tokens, gameEngine)) {return "Invalid actions number.";}
         String builtInResult = builtInCommandHandling(tokens,gameEngine);
         if(builtInResult != null){
             return builtInResult;
@@ -23,27 +23,88 @@ public class GameCommandsHandling {
         }
         return "No valid action detected.";
     }
-
+//cut cut tree tree is ok
     public static boolean onlyOneTrigger(LinkedList<String> tokens, GameEngine gameEngine) {
         Set<String> cmds = new HashSet<String>();
-        cmds.add("inventory");
-        cmds.add("inv");
-        cmds.add("get");
-        cmds.add("drop");
-        cmds.add("goto");
-        cmds.add("look");
+//        cmds.add("inventory");
+//        cmds.add("inv");
+//        cmds.add("get");
+//        cmds.add("drop");
+//        cmds.add("goto");
+//        cmds.add("look");
+//        cmds.add("health");
+
         for(int i = 0; i < gameEngine.getGameActions().size(); i++) {
             GameAction currentAction = gameEngine.getGameActions().get(i);
+            for(Map.Entry<Integer, String> trigger: currentAction.getTriggers().entrySet()) {
+                if(!cmds.contains(trigger.getValue())) {
+                    cmds.add(trigger.getValue());
+                    break;
+                }
+
+            }
             cmds.addAll(currentAction.getTriggers().values());
         }
-        int cmdCounts = 0;
+        int cmdCounts = cmds.size();
+        int invCount = 0;
+        int getCount = 0;
+        int dropCount = 0;
+        int gotoCount = 0;
+        int lookCount = 0;
+        int healthCount = 0;
         for (String token: tokens) {
             if (token == null) {continue; }
-            if(cmds.contains(token.toLowerCase())) {
-                cmdCounts++;
+            if(token.equalsIgnoreCase("inventory") || token.equalsIgnoreCase("inv")) {invCount = 1;}
+            else if(token.equalsIgnoreCase("get")) {getCount = 1;}
+            else if(token.equalsIgnoreCase("drop")) {dropCount = 1;}
+            else if(token.equalsIgnoreCase("goto")) {gotoCount = 1;}
+            else if(token.equalsIgnoreCase("look")) {lookCount = 1;}
+            else if(token.equalsIgnoreCase("health")) {healthCount = 1;}
+//            if(cmds.contains(token.toLowerCase())){
+//                cmdCounts++;
+//            }
+        }
+        cmdCounts = cmdCounts + getCount + dropCount + gotoCount + lookCount + healthCount + invCount;
+
+        return cmdCounts == 1;
+    }
+
+    public static boolean onlyOneEntity(LinkedList<String> tokens, GameEngine gameEngine) {
+        Set<String> entities = new HashSet<>();
+        for(Map.Entry<Integer, Location> location: gameEngine.getLocations().entrySet()){
+            entities.add(location.getValue().getName());
+            for(Map.Entry<Integer, Artefact> artefact: location.getValue().getArtefacts().entrySet()){
+                entities.add(artefact.getValue().getName());
+            }
+            for(Map.Entry<Integer, Furniture> furniture: location.getValue().getFurniture().entrySet()){
+                entities.add(furniture.getValue().getName());
+            }
+            for(Map.Entry<Integer, Character> character: location.getValue().getCharacters().entrySet()){
+                entities.add(character.getValue().getName());
             }
         }
-        return cmdCounts == 1;
+        for(Map.Entry<Integer, Artefact> inventory: gameEngine.getCurrentPlayer().getInventory().entrySet()){
+            entities.add(inventory.getValue().getName());
+        }
+        System.out.println("All entities: " + entities);
+        int entitiesCount = 0;
+        for(String token: tokens) {
+            if(token == null) {continue;}
+            if(entities.contains(token.toLowerCase())) {entitiesCount++;}
+        }
+        System.out.println("Entities count: " + entitiesCount);
+        for(String token: tokens) {
+            if(token.equalsIgnoreCase("inventory") || token.equalsIgnoreCase("inv")
+                    ||token.equalsIgnoreCase("look") || token.equalsIgnoreCase("health")) {
+                if(entitiesCount == 0) {
+                    return true;
+                }
+            }
+        }
+        if(entitiesCount == 1) {
+            return true;
+        }
+        return false;
     }
 
     public static String builtInCommandHandling(LinkedList<String> tokens, GameEngine gameEngine) {
@@ -142,15 +203,11 @@ public class GameCommandsHandling {
         String artefactName = "";
 
         for (String token : tokens) {
-            System.out.println("Processing token: '" + token + "'");
             boolean matchedArtefactFound = false;
             Iterator<Map.Entry<Integer, Artefact>> iterator = currentLocation.getArtefacts().entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<Integer, Artefact> entry = iterator.next();
-                System.out.println("Comparing token: '" + token + "' with artefact name: '"
-                        + entry.getValue().getName() + "'");
                 if (token.equalsIgnoreCase(entry.getValue().getName())) {
-                    System.out.println("Matched Artefact found!!!");
                     artefactName = entry.getValue().getName();
                     currentPlayer.retrieveArtefact(entry.getValue());
                     iterator.remove();
@@ -158,19 +215,16 @@ public class GameCommandsHandling {
                     break;
                 }
             }
-            System.out.println("Token: '" + token + "' matched? " + matchedArtefactFound);
             if (matchedArtefactFound) {
                 found = true;
                 break;
             }
         }
-
-        System.out.println("Final flag - found: " + found + ", artefactName: '" + artefactName + "'");
         if (!found) {
             return "Artefact not found";
         }
-
-        return "Added Artefact: " + artefactName + " to the inventory.";
+        StringBuilder sMessage = new StringBuilder();
+        return sMessage.append("Added ").append(artefactName).append(" to the inventory.").toString();
     }
 
     public static String dropArtefact(LinkedList<String> tokens, GameEngine gameEngine) {
@@ -345,26 +399,6 @@ public class GameCommandsHandling {
                     break;
                 }
             }
-
-//            for(Map.Entry<Integer,Artefact> artefact: storeroom.getArtefacts().entrySet()){
-//                if(artefact.getValue().getName().equalsIgnoreCase(produced)) {
-//                    System.out.println("Entered produce entity - getArtefact: " + artefact.getValue().getName());
-//                    getCurrentLocation(gameEngine).addArtefact(artefact.getValue());
-//                    break;
-//                }
-//            }
-//            for(Map.Entry<Integer,Furniture> furniture: storeroom.getFurniture().entrySet()){
-//                if(furniture.getValue().getName().equalsIgnoreCase(produced)) {
-//                    getCurrentLocation(gameEngine).addFurniture(furniture.getValue());
-//                    break;
-//                }
-//            }
-//            for(Map.Entry<Integer,Character> character: storeroom.getCharacters().entrySet()){
-//                if(character.getValue().getName().equalsIgnoreCase(produced)) {
-//                    getCurrentLocation(gameEngine).addCharacter(character.getValue());
-//                    break;
-//                }
-//            }
         }
     }
 
